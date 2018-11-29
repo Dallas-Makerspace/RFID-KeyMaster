@@ -44,7 +44,7 @@ class KeyMaster(object):
 			logging.debug("Starting watchdog")
 			while True:
 				self.touch("KeyMaster-watchdog")
-				time.sleep(10)
+				time.sleep(1)
 
 		except Exception as e:
 			logging.error("Exception: %s" % str(e), exc_info=1)
