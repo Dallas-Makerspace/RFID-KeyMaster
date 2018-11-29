@@ -5,6 +5,7 @@ import sys
 import os
 from utils.Loader import Loader
 import logging
+import time
 
 class KeyMaster(object):
 
@@ -38,10 +39,20 @@ class KeyMaster(object):
 			for driver_instance in loader.getDrivers():
 				if driver_instance in startable:
 					driver_instance.start()
+
+			# Watch Dog
+			logging.debug("Starting watchdog")
+			while True:
+				self.touch("KeyMaster-watchdog")
+				time.sleep(10)
+
 		except Exception as e:
 			logging.error("Exception: %s" % str(e), exc_info=1)
 			sys.exit(1)
 
+	def touch(self, fname, times=None):
+		with open(fname, 'a'):
+			os.utime(fname, times)
 
 if __name__ == '__main__':
 	VERSION = 1.0
