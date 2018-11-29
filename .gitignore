@@ -1,3 +1,4 @@
 KeyMaster.ini
-adcache.json
+ADCache.json
 KeyMaster.log
+*.pyc
