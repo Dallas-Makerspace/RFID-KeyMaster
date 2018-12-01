@@ -1,0 +1,5 @@
+KeyMaster.ini
+ADCache.json
+KeyMaster.log
+*.pyc
+KeyMaster-watchdog
