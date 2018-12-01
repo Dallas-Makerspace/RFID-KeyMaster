@@ -6,6 +6,11 @@ import threading
 import logging
 
 class ADApiAuth(Auth):
+	"""
+		This driver uses an RFID API for instant lookup
+		It does not cache the results
+		
+	"""
 	def __init__(self, config, loader):
 		self.mutex = threading.RLock()
 		super().__init__(config, loader)
