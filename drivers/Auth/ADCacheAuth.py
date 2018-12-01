@@ -55,9 +55,11 @@ class ADCacheAuth(Auth):
 	
 	def lookup_rfid(self, id_number):
 		permit = False
+		user = None
 		if id_number in self.ad_cache:
 			if "user" in self.ad_cache[id_number] and "groups" in self.ad_cache[id_number]["user"]:
 				usergroups = self.ad_cache[id_number]["user"]["groups"]
+				user = self.ad_cache[id_number]["user"]
 			else:
 				usergroups = []
 
@@ -68,7 +70,7 @@ class ADCacheAuth(Auth):
 		user = {
 			"authorized": permit,
 			"id": id_number,
-			"user": self.ad_cache[id_number]["user"]
+			"user": user
 		}
 
 		self.notifyAuthObservers(user)

@@ -35,6 +35,7 @@ class ADApiAuth(Auth):
 	
 
 	def lookup_rfid(self, id_number):
+		user = None
 		url = self.config['url']
 		payload = "rfid={:}".format(id_number)
 		headers = {'content-type': "application/x-www-form-urlencoded", }
@@ -47,6 +48,7 @@ class ADApiAuth(Auth):
 		if "user" in result and "groups" in result["user"]:
 			usergroups = result["user"]["groups"]
 			access = result["accessGranted"]
+			user = result["user"]
 		else:
 			usergroups = []
 			access = False
@@ -60,7 +62,8 @@ class ADApiAuth(Auth):
 
 		user = {
 			"authorized": permit,
-			"id": id_number
+			"id": id_number,
+			"user": user
 		}
 		self.notifyAuthObservers(user)
 
