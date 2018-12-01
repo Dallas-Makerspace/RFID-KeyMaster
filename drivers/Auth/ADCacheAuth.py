@@ -20,7 +20,6 @@ class ADCacheAuth(Auth):
 		
 	def setup(self):
 		self.rfid = self.getDriver('rfid')
-		self.log = self.getDriver('log')
 
 		logging.debug("Setup ADCacheAuth")
 

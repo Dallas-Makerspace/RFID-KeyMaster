@@ -29,19 +29,5 @@ class FileLog(Log):
         else:
             raise Exception("Could not find filename configuration")
 
-    def auth(self, user):
-        logging.info("Auth: " + str(user))
-
-    def engaged(self, status):
-        logging.info("Engaged: " + str(status))
-
-    def debug(self, message):
-        logging.debug(message)
-
-    def info(self, message):
-        logging.info(message)
-    
-    def error(self, message):
-        logging.error(message)
     
 

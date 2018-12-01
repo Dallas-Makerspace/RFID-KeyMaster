@@ -23,7 +23,6 @@ class LargeMachineController(Controller):
 		self.lightdriver = self.getDriver('light')
 		#self.buzzer = self.getDriver('buzzer')
 		self.relay = self.getDriver('relay')
-		self.log = self.getDriver('log')
 
 		self.rise_time = 0.3
 		self.timeout_time = 5 * 60

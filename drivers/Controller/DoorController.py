@@ -22,7 +22,6 @@ class DoorController(Controller):
 		self.lightdriver = self.getDriver('light')
 		#self.buzzer = self.getDriver('buzzer')
 		self.relay = self.getDriver('relay')
-		self.log = self.getDriver('log')
 
 		self.door_time = 3
 		self.timer = None

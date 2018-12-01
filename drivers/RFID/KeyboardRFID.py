@@ -6,7 +6,6 @@ import os
 
 class KeyboardRFID(RFID):
 	def setup(self):
-		self.log = self.getDriver('log')
 		return True
 
 	def run(self):

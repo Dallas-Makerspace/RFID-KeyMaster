@@ -6,7 +6,6 @@ import os
 class BinaryCurrentSense(CurrentSense):
 	def setup(self):
 		self.interface = self.getDriver('currentsense_interface')
-		self.log = self.getDriver('log')
 		self.threshold = int(self.config['threshold'])
 		return True
 
