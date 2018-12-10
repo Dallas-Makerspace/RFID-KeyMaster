@@ -41,10 +41,12 @@ class KeyMaster(object):
 					driver_instance.start()
 
 			# Watch Dog
-			logging.debug("Starting watchdog")
-			while True:
-				self.touch("KeyMaster-watchdog")
-				time.sleep(1)
+			if config.has_option('General', 'watchdog'):
+				logging.debug("Starting watchdog")
+				watchdog = int(config.get('General', 'logging'))
+				while True:
+					self.touch("KeyMaster-watchdog")
+					time.sleep(watchdog)
 
 		except Exception as e:
 			logging.error("Exception: %s" % str(e), exc_info=1)
