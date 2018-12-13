@@ -21,7 +21,7 @@ class Loadable(threading.Thread):
 
 	def run(self):
 		try:
-			while self.loop():
+			while self.loop() != False:
 				pass
 		except Exception as e:
 			logging.error("Exception: %s" % str(e), exc_info=1)
