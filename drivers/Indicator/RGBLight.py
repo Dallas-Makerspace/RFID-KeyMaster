@@ -188,3 +188,5 @@ class RGBLight(Light):
 				self.interface.output(self.pin_red, 0)
 				self.interface.output(self.pin_green, 0)
 				self.interface.output(self.pin_blue, 0)
+		1/0
+		

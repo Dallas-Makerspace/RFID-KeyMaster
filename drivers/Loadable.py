@@ -25,8 +25,7 @@ class Loadable(threading.Thread):
 			while self.loop() != False:
 				pass
 		except Exception as e:
-			#logging.error("Exception: %s" % str(e), exc_info=1)
-			logging.error(traceback.format_exc(10))
+			logging.error("Exception: %s" % str(e), exc_info=1)
 			os._exit(42) # Make sure entire application exits
 
 	def loop(self):
