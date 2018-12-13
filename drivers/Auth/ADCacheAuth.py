@@ -48,6 +48,8 @@ class ADCacheAuth(Auth):
 	def lookup_rfid(self, id_number):
 		self.emit('auth_processing', True)
 
+		self.mutex.acquire()
+
 		permit = False
 		user = None
 		if id_number in self.ad_cache:
@@ -61,6 +63,8 @@ class ADCacheAuth(Auth):
 			if not deny:
 				permit = any([x in usergroups for x in self.groups_allowed])
 
+		self.mutex.release()
+		
 		user = {
 			"authorized": permit,
 			"id": id_number,
@@ -70,7 +74,9 @@ class ADCacheAuth(Auth):
 		self.emit('auth', user)
 
 	def updateCache(self, newcache):
+		self.mutex.acquire()
 		self.ad_cache = newcache
+		self.mutex.release()
 
 	def loadCache(self):
 		with open(self.local_cache_file) as f:
