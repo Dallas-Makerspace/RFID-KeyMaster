@@ -15,12 +15,12 @@ class BinaryCurrentSense(CurrentSense):
 
 	def	loop(self):
 		if self.startup:
-			current_value = self.getValue()
+			self.current_value = self.getValue()
 			self.startup = False
 
 		time.sleep(0.1)
 		new_value = self.getValue()
-		if current_value != new_value:
-			current_value = new_value
+		if self.current_value != new_value:
+			self.current_value = new_value
 			self.notifyCurrentChangeObservers(new_value)
 
