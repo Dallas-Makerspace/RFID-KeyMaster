@@ -31,7 +31,7 @@ class ADApiAuth(Auth):
 		return False
 
 	def lookup_rfid(self, id_number):
-		self.emit('auth_processing')
+		self.emit('auth_processing', True)
 
 		user = None
 		url = self.config['url']

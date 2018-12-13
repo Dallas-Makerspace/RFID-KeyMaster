@@ -46,7 +46,7 @@ class ADCacheAuth(Auth):
 		return True
 
 	def lookup_rfid(self, id_number):
-		self.emit('auth_processing')
+		self.emit('auth_processing', True)
 
 		permit = False
 		user = None
