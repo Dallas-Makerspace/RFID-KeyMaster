@@ -20,20 +20,13 @@ class Loadable(threading.Thread):
 			raise RequiredDriverException(driver_type)  
 		return driver  
 
-	def log_traceback(self, ex, ex_traceback=None):
-		if ex_traceback is None:
-			ex_traceback = ex.__traceback__
-		tb_lines = [ line.rstrip('\n') for line in
-					traceback.format_exception(ex.__class__, ex, ex_traceback)]
-		logging.error(tb_lines)
-
 	def run(self):
 		try:
 			while self.loop() != False:
 				pass
 		except Exception as e:
 			#logging.error("Exception: %s" % str(e), exc_info=1)
-			self.log_traceback(e)
+			logging.error(format_exc(10))
 			os._exit(42) # Make sure entire application exits
 
 	def loop(self):
