@@ -93,25 +93,21 @@ class Light(Loadable):
 		self.count = count * 2  # Number of off and on cycles
 		self.blink = blink
 
-	def run(self):
-		try:
-			while True:
-				if self.current_count > 0:
-					self.current_count = self.current_count - 1
-				elif self.current_count == 0:
-					if self.saved_intensity != None:
-						self.restoreValues()
-						self.saved_intensity = None
-					else:
-						self.off()
+	def loop(self):
+		if self.current_count > 0:
+			self.current_count = self.current_count - 1
+		elif self.current_count == 0:
+			if self.saved_intensity != None:
+				self.restoreValues()
+				self.saved_intensity = None
+			else:
+				self.off()
 
-				time.sleep(self.blink_rate)
-				if self.current_blink:
-					self.is_on = not self.is_on
-					if self.is_on:
-						self.interface.output(self.pin, self.intensity)
-					else:
-						self.interface.output(self.pin, 0)
-		except Exception as e:
-			logging.error("Exception: %s" % str(e), exc_info=1)
-			os._exit(42) # Make sure entire application exits
+		time.sleep(self.blink_rate)
+		if self.current_blink:
+			self.is_on = not self.is_on
+			if self.is_on:
+				self.interface.output(self.pin, self.intensity)
+			else:
+				self.interface.output(self.pin, 0)
+

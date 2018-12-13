@@ -163,33 +163,30 @@ class RGBLight(Light):
 		else:
 			return None
 
-	def run(self):
-		try:
-			while True:
-				if self.current_count == None:
-					pass
-				elif self.current_count > 0:
-					self.current_count = self.current_count - 1
-				elif self.current_count == 0:
-					self.current_blink = False
-					self.current_count = None
-					#print("saved: ", self.saved)
-					if self.saved:
-						self.restoreValues()
-					else:
-						self.off()
+	def loop(self):
+		if self.current_count == None:
+			pass
+		elif self.current_count > 0:
+			self.current_count = self.current_count - 1
+		elif self.current_count == 0:
+			self.current_blink = False
+			self.current_count = None
+			#print("saved: ", self.saved)
+			if self.saved:
+				self.restoreValues()
+			else:
+				self.off()
 
-				time.sleep(self.blink_rate)
-				if self.current_blink:
-					self.is_on = not self.is_on
-					if self.is_on:
-						self.interface.output(self.pin_red, self.intensity[0])
-						self.interface.output(self.pin_green, self.intensity[1])
-						self.interface.output(self.pin_blue, self.intensity[2])
-					else:
-						self.interface.output(self.pin_red, 0)
-						self.interface.output(self.pin_green, 0)
-						self.interface.output(self.pin_blue, 0)
-		except Exception as e:
-			logging.error("Exception: %s" % str(e), exc_info=1)
-			os._exit(42) # Make sure entire application exits
+		time.sleep(self.blink_rate)
+		if self.current_blink:
+			self.is_on = not self.is_on
+			if self.is_on:
+				self.interface.output(self.pin_red, self.intensity[0])
+				self.interface.output(self.pin_green, self.intensity[1])
+				self.interface.output(self.pin_blue, self.intensity[2])
+			else:
+				self.interface.output(self.pin_red, 0)
+				self.interface.output(self.pin_green, 0)
+				self.interface.output(self.pin_blue, 0)
+
+		

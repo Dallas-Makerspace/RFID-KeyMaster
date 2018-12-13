@@ -6,6 +6,8 @@ import os
 from utils.Loader import Loader
 import logging
 import time
+from io import StringIO
+import traceback
 
 class KeyMaster(object):
 
@@ -41,10 +43,12 @@ class KeyMaster(object):
 					driver_instance.start()
 
 			# Watch Dog
-			logging.debug("Starting watchdog")
-			while True:
-				self.touch("KeyMaster-watchdog")
-				time.sleep(1)
+			if config.has_option('General', 'watchdog'):
+				logging.debug("Starting watchdog")
+				watchdog = int(config.get('General', 'logging'))
+				while True:
+					self.touch("KeyMaster-watchdog")
+					time.sleep(watchdog)
 
 		except Exception as e:
 			logging.error("Exception: %s" % str(e), exc_info=1)
@@ -53,7 +57,20 @@ class KeyMaster(object):
 	def touch(self, fname, times=None):
 		with open(fname, 'a'):
 			os.utime(fname, times)
+			
+
+def add_custom_print_exception():
+	old_print_exception = traceback.print_exception
+	def custom_print_exception(etype, value, tb, limit=None, file=None):
+		tb_output = StringIO()
+		traceback.print_tb(tb, limit, tb_output)
+		logger = logging.getLogger('customLogger')
+		logger.error(tb_output.getvalue())
+		tb_output.close()
+		old_print_exception(etype, value, tb, limit=None, file=None)
+	traceback.print_exception = custom_print_exception
 
 if __name__ == '__main__':
 	VERSION = 1.0
+	add_custom_print_exception()
 	KeyMaster("KeyMaster.ini")

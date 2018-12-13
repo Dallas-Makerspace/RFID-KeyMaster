@@ -46,6 +46,11 @@ class DoorController(Controller):
 		self.LIGHT_AUTH_PROCESSING = self.getColorFromConfig('light_auth_processing',
 															  [self.lightdriver.COLOR_YELLOW, True, None])
 
+		self.queue = queue.Queue()
+
+		self.auth.observeAuth(self.authEvent)
+		self.auth.observeAuthProcessing(self.authProcessingEvent)
+
 		return True
 
 	def getColorFromConfig(self, key, default=None):
@@ -86,65 +91,50 @@ class DoorController(Controller):
 	def authProcessingEvent(self, value):
 		self.queue.put([self.EVENT_AUTH_PROCESSING, None])
 
-	def run(self):
-		logging.debug("Starting DoorController")
-
-		try:
-
-			self.queue = queue.Queue()
-
-			self.auth.observeAuth(self.authEvent)
-			self.auth.observeAuthProcessing(self.authProcessingEvent)
-
-			state = self.STATE_IDLE
+	def loop(self):
+		if self.startup:
 			self.light(self.LIGHT_IDLE)
-			authId = None
+			self.state = self.STATE_IDLE
 
-			while True:
-				event_type, message = self.queue.get()
+		event_type, message = self.queue.get()
 
-				if state == self.STATE_IDLE:
-					# not in use
-					if event_type == self.EVENT_AUTH:
-						self.light(self.LIGHT_IDLE)
+		if self.state == self.STATE_IDLE:
+			# not in use
+			if event_type == self.EVENT_AUTH:
+				self.light(self.LIGHT_IDLE)
 
-						logging.debug("User: %s" % message)
-						
-						if message['authorized']:
-							authId = message['id']
-							# relay on
-							self.relay.on()
+				logging.debug("User: %s" % message)
+				
+				if message['authorized']:
+					# relay on
+					self.relay.on()
 
-							# green LED on
-							self.light(self.LIGHT_ENERGIZED)
-
-							# start door time timer
-							self.start_timeout(self.door_time)
-
-							state = self.STATE_DOOR_ENERGIZED
-						else:
-							# not an authorized member
-							# blink red LED a few times
-							self.light(self.LIGHT_NOT_AUTHORIZED)
-
-					elif event_type == self.EVENT_AUTH_PROCESSING:
-						self.light(self.LIGHT_AUTH_PROCESSING)
-
-				elif state == self.STATE_DOOR_ENERGIZED:
+					# green LED on
 					self.light(self.LIGHT_ENERGIZED)
-					
-					if event_type == self.EVENT_TIMEOUT:
-						# turn off and reset
-						state = self.STATE_IDLE
 
-						self.light(self.LIGHT_IDLE)
-						
-						self.relay.off()
-						
+					# start door time timer
+					self.start_timeout(self.door_time)
 
-					elif event_type == self.EVENT_AUTH_PROCESSING:
-						self.light(self.LIGHT_AUTH_PROCESSING)
-		except Exception as e:
-			logging.error("Exception: %s" % str(e), exc_info=1)
-			os._exit(42) # Make sure entire application exits
+					self.state = self.STATE_DOOR_ENERGIZED
+				else:
+					# not an authorized member
+					# blink red LED a few times
+					self.light(self.LIGHT_NOT_AUTHORIZED)
+
+			elif event_type == self.EVENT_AUTH_PROCESSING:
+				self.light(self.LIGHT_AUTH_PROCESSING)
+
+		elif self.state == self.STATE_DOOR_ENERGIZED:
+			self.light(self.LIGHT_ENERGIZED)
+			
+			if event_type == self.EVENT_TIMEOUT:
+				# turn off and reset
+				self.state = self.STATE_IDLE
+
+				self.light(self.LIGHT_IDLE)
+				
+				self.relay.off()
+				
+			elif event_type == self.EVENT_AUTH_PROCESSING:
+				self.light(self.LIGHT_AUTH_PROCESSING)
  
