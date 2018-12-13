@@ -21,5 +21,5 @@ class BinaryCurrentSense(CurrentSense):
 		new_value = self.getValue()
 		if self.current_value != new_value:
 			self.current_value = new_value
-			self.notifyCurrentChangeObservers(new_value)
+			self.emit('current_change', new_value)
 

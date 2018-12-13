@@ -3,9 +3,9 @@ from exceptions.RequiredDriverException import RequiredDriverException
 import logging
 import os
 import time
-import traceback
+from pydispatch import Dispatcher
 
-class Loadable(threading.Thread):
+class Loadable(threading.Thread, Dispatcher):
 	def __init__(self, config, loader):
 		self.config = config
 		self.loader = loader

@@ -1,7 +1,5 @@
 from drivers.Auth.Auth import Auth
 import requests
-from utils.Observer import Observer
-from utils.Synchronization import synchronize
 import threading
 import os
 import time
@@ -42,17 +40,14 @@ class ADCacheAuth(Auth):
 
 		self.processing = False
 		
-		self.rfid.observeScan(self.auth_scan)
-		self.rfid.observeScan(self.lookup_rfid)
+		self.rfid.bind(swipe=self.lookup_rfid)
 
 		# run as thread
 		return True
 
-	def auth_scan(self, id_number):
-		logging.debug("RFID scan")
-		self.notifyAuthProcessingObservers()
-	
 	def lookup_rfid(self, id_number):
+		self.emit('auth_processing', True)
+
 		permit = False
 		user = None
 		if id_number in self.ad_cache:
@@ -72,7 +67,7 @@ class ADCacheAuth(Auth):
 			"user": user
 		}
 
-		self.notifyAuthObservers(user)
+		self.emit('auth', user)
 
 	def updateCache(self, newcache):
 		self.ad_cache = newcache
@@ -122,6 +117,4 @@ class ADCacheAuth(Auth):
 		self.syncCheck()
 		time.sleep(self.sync_delay)
 
-
-synchronize(ADCacheAuth, "auth_scan, lookup_rfid")
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
