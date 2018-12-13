@@ -21,6 +21,7 @@ class Loadable(threading.Thread):
 		return driver  
 
 	def run(self):
+		self.startup = True
 		try:
 			while self.loop() != False:
 				pass

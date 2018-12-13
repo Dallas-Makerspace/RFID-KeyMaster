@@ -56,6 +56,12 @@ class LargeMachineController(Controller):
 		self.LIGHT_AUTH_PROCESSING = self.getColorFromConfig('light_auth_processing',
 															  [self.lightdriver.COLOR_YELLOW, True, None])
 
+		self.queue = queue.Queue()
+
+		self.auth.observeAuth(self.authEvent)
+		self.auth.observeAuthProcessing(self.authProcessingEvent)
+		self.currentsense.observeCurrentChange(self.currentChangeEvent)
+
 		return True
 
 	def getColorFromConfig(self, key, default=None):
@@ -99,236 +105,198 @@ class LargeMachineController(Controller):
 	def currentChangeEvent(self, value):
 		self.queue.put([self.EVENT_CURRENT_SENSE, value])
 
-	def run(self):
-		logging.debug("Starting LargeMachineController")
-
-		try:
-			self.queue = queue.Queue()
-
-			self.auth.observeAuth(self.authEvent)
-			self.auth.observeAuthProcessing(self.authProcessingEvent)
-			self.currentsense.observeCurrentChange(self.currentChangeEvent)
-
-			state = self.STATE_IDLE
+	def loop(self):
+		if self.startup:
+			logging.debug("Starting LargeMachineController")
+			self.state = self.STATE_IDLE
 			self.light(self.LIGHT_IDLE)
-			authId = None
+			self.authId = None
+	
+		event_type, message = self.queue.get()
 
-			while True:
-				#if state == self.STATE_IDLE:
-				#    print("State Idle")
-				#elif state == self.STATE_CHECKING_FOR_STARTUP_CURRENT:
-				#    print("State checking for startup current")
-				#elif state == self.STATE_AWAITING_TIMEOUT:
-				#    print("State Awating timeout")
-				#elif state == self.STATE_AWAITING_OFF:
-				#    print("State Awating off")
-				#elif state == self.STATE_ON:
-				#    print("State On")
-				#else:
-				#    print("State Unknown")
-					
+		if self.state == self.STATE_IDLE:
+			# machine not in use
+			if event_type == self.EVENT_AUTH:
+				self.light(self.LIGHT_IDLE)
+
+				logging.debug("User: %s" % message)
 				
-				event_type, message = self.queue.get()
-
-				#if event_type == self.EVENT_AUTH:
-				#    print("EVENT_AUTH")
-				#elif event_type == self.EVENT_AUTH_PROCESSING:
-				#    print("EVENT_AUTH_PROCESSING")
-				#elif event_type == self.EVENT_CURRENT_SENSE:
-				#    print("EVENT_CURRENT_SENSE")
-				#elif event_type == self.EVENT_TIMEOUT:
-				#    print("EVENT_TIMEOUT")
-				#else:
-				#    print("Unknown EVENT")
-
-				#logging.debug("Event type: "+str(event_type)+", "+str(message))
-
-				if state == self.STATE_IDLE:
-					# machine not in use
-					if event_type == self.EVENT_AUTH:
-						self.light(self.LIGHT_IDLE)
-
-						logging.debug("User: %s" % message)
-						
-						if message['authorized']:
-							authId = message['id']
-							if self.currentsense.getValue():
-								# error -- relay isn't supposed to be on - stuck on?
-
-								# relay off
-								self.relay.off()
-
-								# red LED blinking
-								self.light(self.LIGHT_ERROR)
-							else:
-								# wait to give the current time to rise if switch left on
-								state = self.STATE_CHECKING_FOR_STARTUP_CURRENT
-
-								# relay on
-								self.relay.on()
-
-								# green LED on
-								self.light(self.LIGHT_ENERGIZED)
-
-								# start current rise time timer
-								self.start_timeout(self.rise_time)
-						else:
-							# not an authorized member
-							# blink red LED a few times
-							self.light(self.LIGHT_NOT_AUTHORIZED)
-
-					elif event_type == self.EVENT_AUTH_PROCESSING:
-						self.light(self.LIGHT_AUTH_PROCESSING)
-
-					elif event_type == self.EVENT_CURRENT_SENSE:
-						if not message:
-							self.light(self.LIGHT_IDLE)
-
-				elif state == self.STATE_CHECKING_FOR_STARTUP_CURRENT:
-					self.light(self.LIGHT_ENERGIZED)
-					
-					# checking for machine left turned on at badge-in
-					# give current time to rise
-					if event_type == self.EVENT_CURRENT_SENSE:
-						# machine switch left on
-						# logout
-						state = self.STATE_IDLE
+				if message['authorized']:
+					self.authId = message['id']
+					if self.currentsense.getValue():
+						# error -- relay isn't supposed to be on - stuck on?
 
 						# relay off
 						self.relay.off()
 
-						# blink all LEDs
-						self.light(self.LIGHT_SWITCH_LEFT_ON)
+						# red LED blinking
+						self.light(self.LIGHT_ERROR)
+					else:
+						# wait to give the current time to rise if switch left on
+						self.state = self.STATE_CHECKING_FOR_STARTUP_CURRENT
 
-					elif event_type == self.EVENT_TIMEOUT:
-						# machine was off, everything normal
-						state = self.STATE_AWAITING_TIMEOUT
+						# relay on
+						self.relay.on()
 
 						# green LED on
 						self.light(self.LIGHT_ENERGIZED)
-						
-						# start automatic logoff timeout timer
-						self.start_timeout(self.timeout_time)
 
-					elif event_type == self.EVENT_AUTH_PROCESSING:
-						self.light(self.LIGHT_AUTH_PROCESSING)
-	
-					elif event_type == self.EVENT_AUTH:
-						if message['authorized'] and authId == message['id']:
-							# user immediately badged back out
-							state = self.STATE_IDLE
+						# start current rise time timer
+						self.start_timeout(self.rise_time)
+				else:
+					# not an authorized member
+					# blink red LED a few times
+					self.light(self.LIGHT_NOT_AUTHORIZED)
 
-							# relay off
-							self.relay.off()
+			elif event_type == self.EVENT_AUTH_PROCESSING:
+				self.light(self.LIGHT_AUTH_PROCESSING)
 
-							# yellow LED on
-							self.light(self.LIGHT_IDLE)
-						else:
-							# not a member or same member
+			elif event_type == self.EVENT_CURRENT_SENSE:
+				if not message:
+					self.light(self.LIGHT_IDLE)
 
-							# blink red LED a few times
-							self.light(self.LIGHT_NOT_AUTHORIZED)
+		elif self.state == self.STATE_CHECKING_FOR_STARTUP_CURRENT:
+			self.light(self.LIGHT_ENERGIZED)
+			
+			# checking for machine left turned on at badge-in
+			# give current time to rise
+			if event_type == self.EVENT_CURRENT_SENSE:
+				# machine switch left on
+				# logout
+				self.state = self.STATE_IDLE
 
-				elif state == self.STATE_ON:
-					self.light(self.LIGHT_ENERGIZED)
+				# relay off
+				self.relay.off()
 
-					# machine enabled and ready for use
-					if event_type == self.EVENT_AUTH:
-						if message['authorized'] and authId == message['id']:
-							if self.currentsense.getValue():
-								# machine not switched off first, wait until it is
-								state = self.STATE_AWAITING_OFF
+				# blink all LEDs
+				self.light(self.LIGHT_SWITCH_LEFT_ON)
 
-								# green LED blinking
-								self.light(self.LIGHT_AWATING_TURN_OFF)
+			elif event_type == self.EVENT_TIMEOUT:
+				# machine was off, everything normal
+				self.state = self.STATE_AWAITING_TIMEOUT
 
-							else:
-								# user badged out
-								state = self.STATE_IDLE
+				# green LED on
+				self.light(self.LIGHT_ENERGIZED)
+				
+				# start automatic logoff timeout timer
+				self.start_timeout(self.timeout_time)
 
-								# relay off
-								self.relay.off()
+			elif event_type == self.EVENT_AUTH_PROCESSING:
+				self.light(self.LIGHT_AUTH_PROCESSING)
 
-								# yellow LED on
-								self.light(self.LIGHT_IDLE)
-						else:
-							# ignore nonmember or different member
+			elif event_type == self.EVENT_AUTH:
+				if message['authorized'] and self.authId == message['id']:
+					# user immediately badged back out
+					self.state = self.STATE_IDLE
 
-							# blink red LED a few times
-							self.light(self.LIGHT_NOT_AUTHORIZED)
+					# relay off
+					self.relay.off()
 
-					elif event_type == self.EVENT_AUTH_PROCESSING:
-						self.light(self.LIGHT_AUTH_PROCESSING)
-	
-					elif event_type == self.EVENT_CURRENT_SENSE:
-						if not message:
-							# machine turned off
-							state = self.STATE_AWAITING_TIMEOUT
+					# yellow LED on
+					self.light(self.LIGHT_IDLE)
+				else:
+					# not a member or same member
 
-							# start automatic logoff timeout timer
-							self.start_timeout(self.timeout_time)
-						else:
-							# machine turned on
-							pass
+					# blink red LED a few times
+					self.light(self.LIGHT_NOT_AUTHORIZED)
 
-				elif state == self.STATE_AWAITING_TIMEOUT:
-					self.light(self.LIGHT_ENERGIZED)
+		elif self.state == self.STATE_ON:
+			self.light(self.LIGHT_ENERGIZED)
 
-					# user turned machine off but did not badge out
-					if event_type == self.EVENT_TIMEOUT:
-						# log user out
-						state = self.STATE_IDLE
+			# machine enabled and ready for use
+			if event_type == self.EVENT_AUTH:
+				if message['authorized'] and self.authId == message['id']:
+					if self.currentsense.getValue():
+						# machine not switched off first, wait until it is
+						self.state = self.STATE_AWAITING_OFF
+
+						# green LED blinking
+						self.light(self.LIGHT_AWATING_TURN_OFF)
+
+					else:
+						# user badged out
+						self.state = self.STATE_IDLE
 
 						# relay off
 						self.relay.off()
 
 						# yellow LED on
 						self.light(self.LIGHT_IDLE)
+				else:
+					# ignore nonmember or different member
 
-					elif event_type == self.EVENT_CURRENT_SENSE:
-						if message:
-							# user stopped for awhile, but turned machine back on
-							state = self.STATE_ON
+					# blink red LED a few times
+					self.light(self.LIGHT_NOT_AUTHORIZED)
 
-							# timer off
-							self.cancel_timeout()
-						else:
-							# error state
+			elif event_type == self.EVENT_AUTH_PROCESSING:
+				self.light(self.LIGHT_AUTH_PROCESSING)
 
-							# relay off
-							self.relay.off()
+			elif event_type == self.EVENT_CURRENT_SENSE:
+				if not message:
+					# machine turned off
+					self.state = self.STATE_AWAITING_TIMEOUT
 
-							# red LED blinking
-							self.light(self.LIGHT_ERROR)
+					# start automatic logoff timeout timer
+					self.start_timeout(self.timeout_time)
+				else:
+					# machine turned on
+					pass
 
-					elif event_type == self.EVENT_AUTH_PROCESSING:
-						self.light(self.LIGHT_AUTH_PROCESSING)
-	
-					elif event_type == self.EVENT_AUTH:
-						# some badge badged out
-						state = self.STATE_IDLE
+		elif self.state == self.STATE_AWAITING_TIMEOUT:
+			self.light(self.LIGHT_ENERGIZED)
 
-						# relay off
-						self.relay.off()
+			# user turned machine off but did not badge out
+			if event_type == self.EVENT_TIMEOUT:
+				# log user out
+				self.state = self.STATE_IDLE
 
-						self.light(self.LIGHT_IDLE)
+				# relay off
+				self.relay.off()
 
-				elif state == self.STATE_AWAITING_OFF:
-					self.light(self.LIGHT_AWATING_TURN_OFF)
+				# yellow LED on
+				self.light(self.LIGHT_IDLE)
 
-					# attempt to badge out while machine is on
-					# wait until machine is turned off
-					if event_type == self.EVENT_CURRENT_SENSE:
-						if not message:
-							# machine turned off, log user out
-							state = self.STATE_IDLE
+			elif event_type == self.EVENT_CURRENT_SENSE:
+				if message:
+					# user stopped for awhile, but turned machine back on
+					self.state = self.STATE_ON
 
-							# relay off
-							self.relay.off()
+					# timer off
+					self.cancel_timeout()
+				else:
+					# error state
 
-							# yellow LED on
-							self.light(self.LIGHT_IDLE)
-		except Exception as e:
-			logging.error("Exception: %s" % str(e), exc_info=1)
-			os._exit(42) # Make sure entire application exits
+					# relay off
+					self.relay.off()
+
+					# red LED blinking
+					self.light(self.LIGHT_ERROR)
+
+			elif event_type == self.EVENT_AUTH_PROCESSING:
+				self.light(self.LIGHT_AUTH_PROCESSING)
+
+			elif event_type == self.EVENT_AUTH:
+				# some badge badged out
+				self.state = self.STATE_IDLE
+
+				# relay off
+				self.relay.off()
+
+				self.light(self.LIGHT_IDLE)
+
+		elif self.state == self.STATE_AWAITING_OFF:
+			self.light(self.LIGHT_AWATING_TURN_OFF)
+
+			# attempt to badge out while machine is on
+			# wait until machine is turned off
+			if event_type == self.EVENT_CURRENT_SENSE:
+				if not message:
+					# machine turned off, log user out
+					self.state = self.STATE_IDLE
+
+					# relay off
+					self.relay.off()
+
+					# yellow LED on
+					self.light(self.LIGHT_IDLE)
 

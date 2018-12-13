@@ -13,5 +13,5 @@ class RemoteLog(Log):
 
         return True
 
-    def run(self):
-        pass
+    def loop(self):
+        return False
