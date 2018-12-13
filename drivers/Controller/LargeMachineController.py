@@ -111,7 +111,6 @@ class LargeMachineController(Controller):
 			self.state = self.STATE_IDLE
 			self.light(self.LIGHT_IDLE)
 			self.authId = None
-			self.startup = False
 	
 		event_type, message = self.queue.get()
 

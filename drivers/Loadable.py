@@ -24,7 +24,7 @@ class Loadable(threading.Thread):
 		self.startup = True
 		try:
 			while self.loop() != False:
-				pass
+				self.startup = False
 		except Exception as e:
 			logging.error("Exception: %s" % str(e), exc_info=1)
 			os._exit(42) # Make sure entire application exits

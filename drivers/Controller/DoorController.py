@@ -95,7 +95,6 @@ class DoorController(Controller):
 		if self.startup:
 			self.light(self.LIGHT_IDLE)
 			self.state = self.STATE_IDLE
-			self.startup = False
 
 		event_type, message = self.queue.get()
 

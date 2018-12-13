@@ -16,7 +16,6 @@ class BinaryCurrentSense(CurrentSense):
 	def	loop(self):
 		if self.startup:
 			self.current_value = self.getValue()
-			self.startup = False
 
 		time.sleep(0.1)
 		new_value = self.getValue()

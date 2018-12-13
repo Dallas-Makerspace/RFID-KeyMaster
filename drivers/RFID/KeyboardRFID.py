@@ -20,7 +20,6 @@ class KeyboardRFID(RFID):
 			self.dev.grab()
 			logging.debug(self.dev)
 			self.rfid_code = ""
-			self.startup = False
 
 		for event in self.dev.read_loop():
 			# If key event and key up (0)
