@@ -118,15 +118,9 @@ class ADCacheAuth(Auth):
 			os.utime(local_source, (remote_source_last_modified, remote_source_last_modified))
 
 
-	def run(self):
-		logging.debug("Start run")
-		try:
-			while(True):
-				self.syncCheck()
-				time.sleep(self.sync_delay)
-		except Exception as e:
-			logging.error("Exception: %s" % str(e), exc_info=1)
-			os._exit(42) # Make sure entire application exits
+	def loop(self):
+		self.syncCheck()
+		time.sleep(self.sync_delay)
 
 
 synchronize(ADCacheAuth, "auth_scan, lookup_rfid")
