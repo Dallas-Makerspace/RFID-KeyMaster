@@ -65,6 +65,4 @@ class ADApiAuth(Auth):
 		}
 		self.emit('auth', user)
 
-
-synchronize(ADApiAuth, "auth_scan, lookup_rfid")
 		

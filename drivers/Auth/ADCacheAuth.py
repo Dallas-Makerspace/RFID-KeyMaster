@@ -117,6 +117,4 @@ class ADCacheAuth(Auth):
 		self.syncCheck()
 		time.sleep(self.sync_delay)
 
-
-synchronize(ADCacheAuth, "auth_scan, lookup_rfid")
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
