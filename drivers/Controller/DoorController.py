@@ -48,8 +48,8 @@ class DoorController(Controller):
 
 		self.queue = queue.Queue()
 
-		self.auth.observeAuth(self.authEvent)
-		self.auth.observeAuthProcessing(self.authProcessingEvent)
+		self.auth.bind(auth=self.authEvent)
+		self.auth.bind(auth_processing=self.authProcessingEvent)
 
 		return True
 

@@ -26,7 +26,8 @@ class KeyboardRFID(RFID):
 			if event.type == ecodes.EV_KEY and event.value == 0:
 				key = self.scancodes.get(event.code)
 				if key == u'\n':  # if enter
-					self.notifyScanObservers(self.rfid_code)
+					self.emit('swipe', self.rfid_code)
+					logging.debug("RFID scan %s" % self.rfid_code)
 					self.rfid_code = ""
 				else:
 					self.rfid_code = self.rfid_code + key
