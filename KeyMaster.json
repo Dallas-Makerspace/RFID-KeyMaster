@@ -1,0 +1,67 @@
+{  
+    "general": {
+        "watchdog": 1
+    },
+    "common": {
+        "rfid": {
+            "driver": "KeyboardRFID",
+            "device": "/dev/input/by-id/usb-Sycreader_USB_Reader_08FF20150112-event-kbd"
+        },
+        "authcache": {
+            "driver": "ADCacheAuthBackend",
+            "remote_cache_url": "https://10.3.0.10/adcache.php",
+            "apikey": "camldsmka238902jfwovedbnsb9dh239f8qh29audg78t&($&^RFUFui2g1289347gfwieduck",
+            "sync_delay": 30
+        },
+        "log": {
+            "driver": "FileLog",
+            "filename": "KeyMaster.log"
+        },
+        "piface": {
+            "driver": "PiFaceInterface"
+        }
+    },
+    "controllers": {
+        "LargeMachine_0": {
+            "controller": {
+                "driver": "LargeMachineController",
+                "bind": {
+                    "auth": "auth.auth",                            "#": "Bind to event auth on driver auth",
+                    "auth_processing": "auth.auth_processing",      "#": "Bind to event auth_processing on driver auth",
+                    "current_sense": "currentsense.current_change", "#": "Bind to event current_change on driver currentsense",
+                },
+                "call": {
+                    "light": "light.light",            "#": "Call function light on driver light with no argument",
+                    "relay": ["piface.relay", 1],      "#": "Call function relay on driver piface with argument 1",
+                    "reporting": "reporting.report",   "#": "Call function report on driver reporting with no argument"
+                }                
+            },
+            "auth": {
+                "driver": "Auth",
+                "groups_allow": ["VCarve Admins"],
+                "groups_deny": [],
+                "bind": {
+                    "swipe": "rfid.swipe"
+                },
+                "call": {
+                    "backend": "authcache.user_lookup"
+                }                
+            },
+            "currentsense": {
+                "driver": "BinaryCurrentSense",
+                "threshold": 1,
+                "call": {
+                    "sensor": ["piface.input", 1]
+                }
+            },
+            "light": {
+                "driver": "RGBLight",
+                "call": {
+                    "red": ["piface.output", 8],
+                    "green": ["piface.output", 7],
+                    "blue": ["piface.output", 6]
+                }
+            }
+        }
+    }
+}

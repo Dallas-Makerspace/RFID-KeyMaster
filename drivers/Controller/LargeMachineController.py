@@ -23,6 +23,7 @@ class LargeMachineController(Controller):
 		self.lightdriver = self.getDriver('light')
 		#self.buzzer = self.getDriver('buzzer')
 		self.relay = self.getDriver('relay')
+		self.authlog = self.getDriver('authlog')
 
 		self.rise_time = 0.3
 		self.timeout_time = 5 * 60
@@ -61,6 +62,9 @@ class LargeMachineController(Controller):
 		self.auth.bind(auth=self.authEvent)
 		self.auth.bind(auth_processing=self.authProcessingEvent)
 		self.currentsense.bind(current_change=self.currentChangeEvent)
+
+		self.user = None
+		self.relay_state = False
 
 		return True
 
@@ -105,38 +109,61 @@ class LargeMachineController(Controller):
 	def currentChangeEvent(self, value):
 		self.queue.put([self.EVENT_CURRENT_SENSE, value])
 
+	def logEvent(self, event, state):
+		pass
+
+	def setRelay(self, state):
+		if state != self.relay_state:
+			if state:
+				self.relay.on()
+			else:
+				self.relay.off()
+			self.logEvent(self.authlog.LOG_RELAY_CHANGE, state)
+			self.relay_state = state
+
 	def loop(self):
 		if self.startup:
 			logging.debug("Starting LargeMachineController")
 			self.state = self.STATE_IDLE
 			self.light(self.LIGHT_IDLE)
 			self.authId = None
+			self.user = None
 	
 		event_type, message = self.queue.get()
+
+		if event_type == self.EVENT_AUTH:
+			self.logEvent(self.LOG_AUTH, message)
+		elif event_type == self.EVENT_CURRENT_SENSE:
+			self.logEvent(self.LOG_CURRENT_SENSE, message)
 
 		if self.state == self.STATE_IDLE:
 			# machine not in use
 			if event_type == self.EVENT_AUTH:
+				self.user = message
+
 				self.light(self.LIGHT_IDLE)
 
 				logging.debug("User: %s" % message)
-				
+
 				if message['authorized']:
 					self.authId = message['id']
+
 					if self.currentsense.getValue():
 						# error -- relay isn't supposed to be on - stuck on?
 
 						# relay off
-						self.relay.off()
+						self.setRelay(False)
 
 						# red LED blinking
 						self.light(self.LIGHT_ERROR)
+
+						self.logEvent(self.authlog.LOG_STUCK_ON, self.user)
 					else:
 						# wait to give the current time to rise if switch left on
 						self.state = self.STATE_CHECKING_FOR_STARTUP_CURRENT
 
 						# relay on
-						self.relay.on()
+						self.setRelay(True)
 
 						# green LED on
 						self.light(self.LIGHT_ENERGIZED)
@@ -147,6 +174,8 @@ class LargeMachineController(Controller):
 					# not an authorized member
 					# blink red LED a few times
 					self.light(self.LIGHT_NOT_AUTHORIZED)
+
+					self.logEvent(self.authlog.LOG_NOT_AUTHORIZED, self.user)
 
 			elif event_type == self.EVENT_AUTH_PROCESSING:
 				self.light(self.LIGHT_AUTH_PROCESSING)
@@ -166,10 +195,12 @@ class LargeMachineController(Controller):
 				self.state = self.STATE_IDLE
 
 				# relay off
-				self.relay.off()
+				self.setRelay(False)
 
 				# blink all LEDs
 				self.light(self.LIGHT_SWITCH_LEFT_ON)
+
+				self.logEvent(self.authlog.LOG_SWITCH_LEFT_ON, self.user)
 
 			elif event_type == self.EVENT_TIMEOUT:
 				# machine was off, everything normal
@@ -181,6 +212,8 @@ class LargeMachineController(Controller):
 				# start automatic logoff timeout timer
 				self.start_timeout(self.timeout_time)
 
+				self.logEvent(self.authlog.LOG_AUTH, self.user)
+
 			elif event_type == self.EVENT_AUTH_PROCESSING:
 				self.light(self.LIGHT_AUTH_PROCESSING)
 
@@ -190,10 +223,14 @@ class LargeMachineController(Controller):
 					self.state = self.STATE_IDLE
 
 					# relay off
-					self.relay.off()
+					self.setRelay(False)
 
-					# yellow LED on
+					# idle
 					self.light(self.LIGHT_IDLE)
+
+					self.logEvent(self.authlog.LOG_DEAUTH, self.user)
+					self.user = None
+
 				else:
 					# not a member or same member
 
@@ -213,15 +250,20 @@ class LargeMachineController(Controller):
 						# green LED blinking
 						self.light(self.LIGHT_AWATING_TURN_OFF)
 
+						self.logEvent(self.authlog.LOG_AWATING_TURN_OFF, self.user)
+						
 					else:
 						# user badged out
 						self.state = self.STATE_IDLE
 
 						# relay off
-						self.relay.off()
+						self.setRelay(False)
 
-						# yellow LED on
+						# Idle
 						self.light(self.LIGHT_IDLE)
+	
+						self.logEvent(self.authlog.DEAUTH, self.user)
+						self.user = None
 				else:
 					# ignore nonmember or different member
 
@@ -251,7 +293,7 @@ class LargeMachineController(Controller):
 				self.state = self.STATE_IDLE
 
 				# relay off
-				self.relay.off()
+				self.setRelay(False)
 
 				# yellow LED on
 				self.light(self.LIGHT_IDLE)
@@ -267,10 +309,15 @@ class LargeMachineController(Controller):
 					# error state
 
 					# relay off
-					self.relay.off()
+					self.setRelay(False)
 
 					# red LED blinking
 					self.light(self.LIGHT_ERROR)
+
+					self.logEvent(self.authlog.LOG_CURRENT_ALREADY_OFF_ERROR, self.user)
+					self.logEvent(self.authlog.LOG_DEAUTH, self.user)
+					self.user = None
+					self.state = STATE_IDLE
 
 			elif event_type == self.EVENT_AUTH_PROCESSING:
 				self.light(self.LIGHT_AUTH_PROCESSING)
@@ -280,9 +327,12 @@ class LargeMachineController(Controller):
 				self.state = self.STATE_IDLE
 
 				# relay off
-				self.relay.off()
+				self.setRelay(False)
 
 				self.light(self.LIGHT_IDLE)
+
+				self.logEvent(self.authlog.LOG_OTHER_BADGE_OUT, message)
+				self.user = None
 
 		elif self.state == self.STATE_AWAITING_OFF:
 			self.light(self.LIGHT_AWATING_TURN_OFF)
@@ -295,8 +345,10 @@ class LargeMachineController(Controller):
 					self.state = self.STATE_IDLE
 
 					# relay off
-					self.relay.off()
+					self.setRelay(False)
 
 					# yellow LED on
 					self.light(self.LIGHT_IDLE)
 
+					self.logEvent(self.authlog.LOG_DEAUTH, self.user)
+					self.user = None

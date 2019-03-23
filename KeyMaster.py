@@ -1,4 +1,5 @@
-import configparser
+#import configparser
+import json
 from importlib import import_module
 import sys
 import os
@@ -17,13 +18,22 @@ class KeyMaster(object):
 				if "__pycache__" not in x[0]:
 					sys.path.insert(0, x[0])
 
-			config = configparser.ConfigParser()
-			config.read(config_filename)
+			#config = configparser.ConfigParser()
+			#config.read(config_filename)
+			with open(config_filename) as config_file:  
+				config = json.load(config_file)
 
 			loader = Loader(config)
 
-			for driver in config.items('Drivers'):
+			# Load Common Drivers
+			for driver in config['common']:
 				loader.loadDriver(driver[0], driver[1])
+
+			# Load Controller Drivers
+			for controller in config['controllers']:
+				for driver in controller[1]:
+					loader.loadDriver(driver[0], driver[1], controller[0]) 
+
 		except Exception as e:
 			print("Exception: %s" % str(e))
 			sys.exit(1)
@@ -33,16 +43,32 @@ class KeyMaster(object):
 		logging.info("KeyMaster %s Starting ---" % VERSION)
 
 		try:	
-			startable = dict()
-			for driver_instance in loader.getDrivers():
-				startable[driver_instance] = driver_instance.setup()
+			startable = {
+				'common' : [],
+				'controllers' : []
+			}
 
-			for driver_instance in loader.getDrivers():
-				if driver_instance in startable:
-					driver_instance.start()
+			# Setup Common Drivers
+			for driver_instance in loader.getCommonDrivers():
+				if driver_instance.setup():
+					startable['common'].append(driver_instance)
 
-			# Watch Dog
-			if config.has_option('General', 'watchdog'):
+			# Setup Controller Drivers
+			for controller in config['controllers']:
+				for driver_instance in loader.getControllerDrivers(controller[0]):
+					if driver_instance.setup():
+						startable['controllers'].append(driver_instance) 
+
+			# Start common
+			for driver_instance in startable['common']:
+				driver_instance.start()
+
+			# Start Controllers
+			for driver_instance in startable['controllers']:
+				driver_instance.start()
+
+			# Start Watch Dog
+			if 'watchdog' in config['general']:
 				logging.debug("Starting watchdog")
 				watchdog = int(config.get('General', 'logging'))
 				while True:
