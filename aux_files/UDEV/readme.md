@@ -1,0 +1,1 @@
+Copy 10-local.rules to /etc/udev/rules.d directory. The file should be named "10-local.rules"

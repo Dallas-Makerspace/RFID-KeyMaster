@@ -1,0 +1,15 @@
+#
+#  udev rules for RFID tag readers to alias to RFID_Reader_0 and RFID_Reader_1
+#
+KERNEL=="event*", SUBSYSTEM=="input", ATTRS{name}=="Sycreader*USB Reader", ATTRS{phys}=="*.usb-1.3*", SYMLINK="RFID_Reader_0"
+KERNEL=="event*", SUBSYSTEM=="input", ATTRS{name}=="Sycreader*USB Reader", ATTRS{phys}=="*.usb-1.1.3*", SYMLINK="RFID_Reader_0"
+
+#
+
+#  USB 1.4 for Pi 4 compatibility
+#
+KERNEL=="event*", SUBSYSTEM=="input", ATTRS{name}=="Sycreader*USB Reader", ATTRS{phys}=="*.usb-1.4*", SYMLINK="RFID_Reader_1"
+#
+KERNEL=="event*", SUBSYSTEM=="input", ATTRS{name}=="Sycreader*USB Reader", ATTRS{phys}=="*.usb-1.5*", SYMLINK="RFID_Reader_1"
+KERNEL=="event*", SUBSYSTEM=="input", ATTRS{name}=="Sycreader*USB Reader", ATTRS{phys}=="*.usb-1.1.5*", SYMLINK="RFID_Reader_1"
+
