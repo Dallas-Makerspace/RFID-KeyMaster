@@ -1,0 +1,20 @@
+     Next actions
+
+Write GPIO driver for use in DIN rail design without PiFace DigitalIO
+
+Convert to syslog logging
+
+Write new authentication driver for use with the (much simpler) DMS Common API (https://github.com/Dallas-Makerspace/CommonApi)
+
+     Feature development
+
+Allow operation without RGBLight as option (so I/O doesn't need to be allocated. (may be as simple as not loading module - needs checked)
+
+Second scan effect (toggle, ignore if on, extend timer if on)
+Invalid scan effect (output off, no effect)
+
+programmable timeout (now fixed)
+
+handle multiple contactors (just start separate parallel processes?)
+
+analog current sense to support detection of machine state: on/machine running/overload

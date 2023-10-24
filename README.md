@@ -1,2 +1,2 @@
 # RFID-KeyMaster
-KeyMaster RFID Interlock Raspberry Pi
+KeyMaster RFID Interlock for Raspberry Pi
