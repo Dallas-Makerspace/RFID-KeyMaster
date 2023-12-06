@@ -1,6 +1,6 @@
      Next actions
 
-Write GPIO driver for use in DIN rail design without PiFace DigitalIO
+Write GPIO driver for use in DIN rail design without PiFace DigitalIO (almost done, need thorough test.)
 
 Convert to syslog logging
 
@@ -15,6 +15,6 @@ Invalid scan effect (output off, no effect)
 
 programmable timeout (now fixed)
 
-handle multiple contactors (just start separate parallel processes?)
+handle multiple contactors (just start separate parallel processes?) (immediate challenge here is multiple card readers. Linux or Python -not sure which doesn't seem to like multiple readers.  I can get devices delineated in /dev, but they no longer seem to read.)
 
 analog current sense to support detection of machine state: on/machine running/overload
