@@ -13,11 +13,12 @@
 
 ##################################################################################
 #
-#               NOTE
+#                           NOTE
 #
 # In order to use the GPIO ports your user must be a member of the gpio group. 
 # The pi user is a member by default, other users need to be added manually.
 #  sudo usermod -a -G gpio <username>
+#
 ##################################################################################
 
 import os  # is this really needed?
@@ -46,7 +47,7 @@ class PiGpioInterface(Interface):
 #
 
     PinTranslate = {    # Limited
-        "GPIO5" : 5, "PIN29" : 5, "GPIO6" : 6, "PIN31" : 6,
+        "2":5, "GPIO5" : 5, "PIN29" : 5, "GPIO6" : 6, "PIN31" : 6,
         "GPIO16" : 16, "PIN36" : 16, "GPIO17" : 17, "PIN11" : 17,
         "GPIO22" : 22, "PIN15" : 22, "GPIO23" : 23, "PIN16" : 23,
         "GPIO24" : 24, "PIN18" : 24, "GPIO25" : 25, "PIN22" : 25,
@@ -87,89 +88,72 @@ class PiGpioInterface(Interface):
     def checkConfigPin(self,position,iou):
         
         bcm = None
-        print("\n\nBCM(None)=",bcm,"\n\n")
 
         bcm = PiGpioInterface.PinTranslate.get(position) 
-        
-        print("\n\nBCM=",bcm,"\n\n")
             
         if bcm == None:
             raise InvalidPositionException(
-                "\n\nPosiiton GPIO",position," (",BCM,") "
+                "\n\nPosiiton GPIO",position," (",bcm,") "
                 " Not available for assignment)\n\n")
+        
         elif PiGpioInterface.IOAssignment.get(bcm) == iou:
             pass
+        
         elif PiGpioInterface.IOAssignment.get(bcm) == "U":
+        
             if iou == "I":
                 gpio.setup(bcm, gpio.IN, gpio.PUD_UP)
                 PiGpioInterface.IOAssignment.update({bcm : "I"})
+                
             elif iou == "O":
                 gpio.setup(bcm, gpio.OUT)
                 PiGpioInterface.IOAssignment.update({bcm : "O"})
+                
             else:
                 print ("\n\nERROR: Do not recognize IO type ",iou,
                     " for GPIO",bcm,"\n\n")
+                    
         else:   # already assigned something else
             bcm = None
-            print("\n\nERROR: IO Assignment Conflict for",function,
+            logging.debug("ERROR: IO Assignment Conflict for",function,
                 " requested ",position," as ",iou,
-                " and is already set to ",PiGpioInterface.IOAssignment.get(bcm),"\n\n")   
+                " and is already set to ",PiGpioInterface.IOAssignment.get(bcm))
+        
         return bcm
            
     def reset_gpio(self):
         gpio.cleanup()
     
     def setup(self): 
-    
+
         gpio.setmode(gpio.BCM)
-        print("\n\nIn GPIO Setup\n\n")
         
-        frm = inspect.stack()[1]
-        mod = inspect.getmodule(frm[0])
-        print ("Called by: ",mod.__name__,"\n\n")
+        # can probably just refernce gpio.cleanup directly
         
+        atexit.register(self.reset_gpio) 
+
+    
         return True
+        
        
     def input(self, position):
-    
-        print("\n\nGPIO Input Pos:",position,"\n\n")
-        
-        frm = inspect.stack()[1]
-        mod = inspect.getmodule(frm[0])
-        print ("Called by: ",mod.__name__,"\n\n")
 
         return gpio.input(self.checkConfigPin(position,"I"))
-
+        
 
     def output(self, position, value):
     
-        print("\n\nGPIO Output Pos:",position," value: ",value,"\n\n")
-        
-        frm = inspect.stack()[1]
-        mod = inspect.getmodule(frm[0])
-        print ("Called by: ",mod.__name__,"\n\n")
-        
-        print ("Check ",self.checkConfigPin(position,"O")," Position:",position,"\n\n")
-
+        if value > 0.1: value = 1
+    
         gpio.output(self.checkConfigPin(position,"O"),value)
 
         return True
-
-                
-#       can we just alias relay to output?
-#       relay = output (after output def)
-#    relay = output
-    
-    def relay(self, position, value):
-    
-        print("\n\nGPIO Relay Pos:",position," value: ",value,"\n\n")
         
-        frm = inspect.stack()[1]
-        mod = inspect.getmodule(frm[0])
-        print ("Called by: ",mod.__name__,"\n\n")
 
-        gpio.output(self.checkConfigPin(position,"O"),value)
-        
-        return True
+#   We can we just alias relay to output
+
+    relay = output
+    
+
         
         
