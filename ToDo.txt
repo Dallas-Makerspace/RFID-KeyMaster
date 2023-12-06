@@ -6,6 +6,8 @@ Convert to syslog logging
 
 Write new authentication driver for use with the (much simpler) DMS Common API (https://github.com/Dallas-Makerspace/CommonApi)
 
+Add comments to .ini example file that include all optional configs and their variants
+
      Feature development
 
 Allow operation without RGBLight as option (so I/O doesn't need to be allocated. (may be as simple as not loading module - needs checked)
