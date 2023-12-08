@@ -2,7 +2,7 @@
 # Modified from PiFaceInterface class
 #
 #   By Rich Osman, 23 November 2023
-#   Untested, and the coder is uninformed. 
+#   Functional, but not thoroughly tested 
 #
 #   The setup is complicated in attempt to retain compatibility with 
 #   PiFace interface code
