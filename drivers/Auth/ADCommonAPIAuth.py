@@ -57,7 +57,11 @@ class ADCommonAPIAuth(Auth):
 #        print ("\nResponse: ",response,"\n")
 
         json = response.json()
-        
+
+
+#
+# TODO: Add check to intercept and report responses other than http 200
+#
  #      print ("JSON: ",json,"\n")
         
 #
