@@ -8,7 +8,10 @@
 #   PiFace interface code
 #
 #  2Bdo
-#   consider converting to BOARD pin numbering (as opposed to GPIO/bcm)
+#    consider converting to BOARD pin numbering (as opposed to GPIO/bcm)
+#    consider adding PWM output for the four pins that support it. 
+#        which would be useful for indicator intensity control and color 
+#        seelction/mixing
 #
 
 ##################################################################################
