@@ -16,5 +16,10 @@ This port dependency *should* allow the use of multiple readers and let one cont
 
   Networking
 
-  The DMS implementation of interlocks rely on fixed IPs and names. This directory has a prototype dhcpd.conf configuration 
-  file to make this configuration easier. 
+The DMS implementation of interlocks rely on fixed IPs and names. This directory has a prototype dhcpd.conf configuration 
+file to make this configuration easier. 
+
+  BashMod
+
+These two files are used to start, detect failure and restart the KeyMaster script. Keymaster is not started if already running 
+(So SSH sessions don't spawn a second process.) 
