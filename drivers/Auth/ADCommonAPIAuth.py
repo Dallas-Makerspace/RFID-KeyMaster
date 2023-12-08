@@ -1,7 +1,7 @@
 #
 # Modified from ADApiAuth class
 #
-#   By Rich Osman, 13 April 2023
+#   By Rich Osman, 7 December 2023
 #   Untested, and the coder is uninformed. 
 #
 #   Editing from the original is not complete. 
@@ -54,11 +54,12 @@ class ADCommonAPIAuth(Auth):
         
         response = requests.get(url, json=data, headers=headers)
         
-        print ("\nResponse: ",response,"\n")
+#        print ("\nResponse: ",response,"\n")
 
         json = response.json()
         
-        print ("JSON: ",json,"\n")
+ #      print ("JSON: ",json,"\n")
+        
 #
 #       Response should be in the form:
 #       {"inGroup":true,"activeMember":true}
@@ -75,7 +76,7 @@ class ADCommonAPIAuth(Auth):
         
         print ("User: ", user,"\n\n")
         
-#        logging.debug(str(datetime.datetime.now()) + " ---- " + "Badge Number is ".format(id_number)," Permitted:", json["inGroup"]," Active Member: ",json(activeMember))
+#        logging.debug( "Badge Number is ".format(id_number)," Permitted:", json["inGroup"]," Active Member: ",json(activeMember))
 
         self.notifyAuthObservers(user)
 
