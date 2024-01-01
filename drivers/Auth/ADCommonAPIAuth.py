@@ -37,8 +37,9 @@ class ADCommonAPIAuth(Auth):
         
         self.rfid.observeScan(self.auth_scan)
         self.rfid.observeScan(self.lookup_rfid)
-
+        #
         # do not run as thread
+        #
         return False
 
     def auth_scan(self, id_number):
@@ -54,16 +55,15 @@ class ADCommonAPIAuth(Auth):
         
         response = requests.get(url, json=data, headers=headers)
         
-#        print ("\nResponse: ",response,"\n")
+        if response.status_code != requests.codes.ok:
+        
+            logmsg = "RFID scan result response "+str(response.status_code)
+            logging.debug(logmsg)
 
+            return
+        
         json = response.json()
 
-
-#
-# TODO: Add check to intercept and report responses other than http 200
-#
- #      print ("JSON: ",json,"\n")
-        
 #
 #       Response should be in the form:
 #       {"inGroup":true,"activeMember":true}
@@ -77,10 +77,9 @@ class ADCommonAPIAuth(Auth):
             "authorized": json["inGroup"],
             "id": id_number
         }
-        
-        print ("User: ", user,"\n\n")
-        
-#        logging.debug( "Badge Number is ".format(id_number)," Permitted:", json["inGroup"]," Active Member: ",json(activeMember))
+                
+        logmsg = "Badge Number is "+str(id_number)+" Permitted: "+str(json["inGroup"])+" Active Member: "+str(json["activeMember"])        
+        logging.debug(logmsg)
 
         self.notifyAuthObservers(user)
 
