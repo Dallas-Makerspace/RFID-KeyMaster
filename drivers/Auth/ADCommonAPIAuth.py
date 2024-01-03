@@ -18,6 +18,9 @@ import logging
 #       This AD lookup is based on the nicely simplified CommonApi
 #       See https://github.com/Dallas-Makerspace/CommonApi/tree/master
 #
+#       at the time these notes are written, the URL is 
+#       http://192.168.203.30:8083/badgeGroupMembership"
+#
 
 class ADCommonAPIAuth(Auth):
     def __init__(self, config, loader):
