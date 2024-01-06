@@ -56,4 +56,14 @@ class SysLogger(Log):
     def error(self, message):
         logger.error(message)
     
-
+#
+#  RFC5424 message severity levels
+#Numerical Code	Level	Severity
+#0	Emergency	    system is unusable
+#1	Alert	        action must be taken immediately
+#2	Critical	    critical conditions
+#3	Error	        error conditions
+#4	Warning	        warning conditions
+#5	Notice	        normal but significant condition
+#6	Informational	Informational Messages
+#7	Debug	        debug level messages
