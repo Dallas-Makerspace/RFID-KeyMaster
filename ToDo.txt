@@ -1,5 +1,6 @@
      Next actions
-
+Change lookup logging to record RFID # before lookup so that the RFID # is logged even if the lookup fails
+Trap lookup exception so that the system doesn't crash and restart. 
 Convert to syslog logging
 
      Feature development
