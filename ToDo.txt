@@ -1,0 +1,20 @@
+     Next actions
+Change lookup logging to record RFID # before lookup so that the RFID # is logged even if the lookup fails
+Trap lookup exception so that the system doesn't crash and restart. 
+
+Convert to structured logging
+
+Convert to syslog logging
+
+     Feature development
+
+Allow operation without RGBLight as option (so I/O doesn't need to be allocated. (may be as simple as not loading module - needs checked)
+
+Add PWM IO to allow light intensity variation. 
+
+Second scan effect (toggle, ignore if on, extend timer if on)
+Invalid scan effect (output off, no effect)
+
+handle multiple contactors (just start separate parallel processes?) (immediate challenge here is multiple card readers. Linux or Python -not sure which doesn't seem to like multiple readers.  I can get devices delineated in /dev, but they no longer seem to read.)
+
+analog current sense to support detection of machine state: on/machine running/overload
