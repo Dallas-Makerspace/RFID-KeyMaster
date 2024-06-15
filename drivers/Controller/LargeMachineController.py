@@ -30,9 +30,9 @@ class LargeMachineController(Controller):
 		self.timer = None
 
 		if 'rise_time' in self.config:
-			self.rise_time = self.config['rise_time']
+			self.rise_time = int(self.config['rise_time'])
 		if 'timeout_time' in self.config:
-			self.timeout_time = self.config['timeout_time']
+			self.timeout_time = int(self.config['timeout_time'])
 
 		# Defaults
 		# [Intensity/Color, Blink, Blink Count]
