@@ -5,7 +5,7 @@ import threading
 import logging
 import os
 
-class CabinetController(Controller):
+class LockerController(Controller):
 	STATE_OPEN = 10
 	STATE_AWAITING_LOCK = 30
 	STATE_LOCKED = 40
