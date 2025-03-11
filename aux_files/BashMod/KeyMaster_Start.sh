@@ -10,11 +10,11 @@ then
 	echo "KeyMaster Already Running"
 	exit
 else
-	python KeyMaster.py &>> console.log &
+	python KeyMaster.py |& tee -a  console.log &
 	logger "Keymaster starting" 
-	echo &>> console.log
-	echo "Keymaster starting" &>> console.log
-	date &>> console.log
+	echo |& tee -a  console.log
+	echo "Keymaster starting" |& tee -a  console.log
+	date |& tee -a  console.log
 	echo
 fi
 while [ true ] 
@@ -24,10 +24,10 @@ do
 		sleep 2
 	else 
 		echo
-		echo "Keymaster not running, restarting " &>> console.log
-		date &>> console.log
-		echo &>> console.log
+		echo "Keymaster not running, restarting " |& tee -a  console.log
+		date |& tee -a  console.log
+		echo |& tee -a  console.log
 		logger "Keymaster not running, restarting " 
-		python KeyMaster.py &>> console.log &
+		python KeyMaster.py |& tee -a  console.log &
 	fi
 done;
