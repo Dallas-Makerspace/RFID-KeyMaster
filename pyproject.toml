@@ -1,0 +1,23 @@
+[project]
+name = "keymaster"
+version = "1.0.0"
+description = "KeyMaster Project: Manages drivers and watches system events"
+authors = [
+  {name = "Rich Ozman", email = "tbd@example.com"},
+  {name = "Mike Cole", email = "tbd@example.com"},
+  {name = "Draco"},
+  {email = "different.person@example.com"},
+]
+maintainers = [
+  {name = "Rich Ozman", email = "tbd@example.com"},
+]
+license = "MIT"     # TODO: verify license
+readme = "README.md"
+requires-python = ">= 3.12"
+dependencies = [
+  "evdev",
+  "requests",
+  "pifacedigitalio",
+  "pifacecommon",
+  "automationhat"
+]

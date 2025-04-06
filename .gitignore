@@ -3,3 +3,16 @@ ADCache.json
 KeyMaster.log
 *.pyc
 KeyMaster-watchdog
+
+# Exclude personal settings and local files
+.venv
+.idea
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries/
+.idea/**/shelf/
+
+# Exclude generated or temporary build files
+*.iml
+out/
