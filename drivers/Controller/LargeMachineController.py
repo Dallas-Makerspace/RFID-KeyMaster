@@ -29,33 +29,47 @@ class LargeMachineController(Controller):
 		self.timeout_time = 5 * 60
 		self.timer = None
 
+		self.current_sensor = 'enabled'
+		self.start_current_check = 'enabled'
+
 		if 'rise_time' in self.config:
 			self.rise_time = int(self.config['rise_time'])
 		if 'timeout_time' in self.config:
 			self.timeout_time = int(self.config['timeout_time'])
+#########################################################################################################################################################
+		# Some applications run contunously making current sensing of no value
+		
+		if 'current_sensor' in self.config:
+			self.current_sensor = (self.config['current_sensor']).lower
+
+		# Some applications have a startup current surge that fools the power on check and never allows the 
+		# machine to be turned on. These applications have no need for this power on check 
+		
+		if 'start_current_check' in self.config:
+			self.start_current_check = (self.config['start_current_check']).lower
 
 		# Defaults
 		# [Intensity/Color, Blink, Blink Count]
 		self.LIGHT_IDLE = self.getColorFromConfig('light_idle',
-												  [self.lightdriver.COLOR_BLUE, False, None])
+			[self.lightdriver.COLOR_BLUE, False, None])
 
 		self.LIGHT_ERROR = self.getColorFromConfig('light_error',
-												   [self.lightdriver.COLOR_RED, False, None])
+			[self.lightdriver.COLOR_RED, False, None])
 
 		self.LIGHT_ENERGIZED = self.getColorFromConfig('light_energized',
-													   [self.lightdriver.COLOR_GREEN, False, None])
+			[self.lightdriver.COLOR_GREEN, False, None])
 
 		self.LIGHT_NOT_AUTHORIZED = self.getColorFromConfig('light_not_authorized',
-															[self.lightdriver.COLOR_RED, True, 3])
+			[self.lightdriver.COLOR_RED, True, 3])
 
 		self.LIGHT_SWITCH_LEFT_ON = self.getColorFromConfig('light_switch_left_on',
-															[self.lightdriver.COLOR_YELLOW, False, None])
+			[self.lightdriver.COLOR_YELLOW, False, None])
 
 		self.LIGHT_AWATING_TURN_OFF = self.getColorFromConfig('light_awating_turn_off',
-															  [self.lightdriver.COLOR_GREEN, True, None])
+			[self.lightdriver.COLOR_GREEN, True, None])
 
 		self.LIGHT_AUTH_PROCESSING = self.getColorFromConfig('light_auth_processing',
-															  [self.lightdriver.COLOR_YELLOW, True, None])
+			[self.lightdriver.COLOR_YELLOW, True, None])
 
 		return True
 
@@ -114,65 +128,50 @@ class LargeMachineController(Controller):
 			self.light(self.LIGHT_IDLE)
 			authId = None
 
-			while True:
-				#if state == self.STATE_IDLE:
-				#    print("State Idle")
-				#elif state == self.STATE_CHECKING_FOR_STARTUP_CURRENT:
-				#    print("State checking for startup current")
-				#elif state == self.STATE_AWAITING_TIMEOUT:
-				#    print("State Awating timeout")
-				#elif state == self.STATE_AWAITING_OFF:
-				#    print("State Awating off")
-				#elif state == self.STATE_ON:
-				#    print("State On")
-				#else:
-				#    print("State Unknown")
-					
+			while True:					
 				
 				event_type, message = self.queue.get()
 
-				#if event_type == self.EVENT_AUTH:
-				#    print("EVENT_AUTH")
-				#elif event_type == self.EVENT_AUTH_PROCESSING:
-				#    print("EVENT_AUTH_PROCESSING")
-				#elif event_type == self.EVENT_CURRENT_SENSE:
-				#    print("EVENT_CURRENT_SENSE")
-				#elif event_type == self.EVENT_TIMEOUT:
-				#    print("EVENT_TIMEOUT")
-				#else:
-				#    print("Unknown EVENT")
-
 				#logging.debug("Event type: "+str(event_type)+", "+str(message))
+#######################################################################################
+# STATE IDLE
+#######################################################################################
 
 				if state == self.STATE_IDLE:
 					# machine not in use
 					if event_type == self.EVENT_AUTH:
 						self.light(self.LIGHT_IDLE)
-
-						logging.debug("User: %s" % message)
+						logging.info("User: %s" % message)
 						
 						if message['authorized']:
 							authId = message['id']
-							if self.currentsense.getValue():
+############################################################################################################################################################################################################
+							# This current check is being performed BEFORE the power is aplied.  
+							#   It's checking for an error state.
+							if self.currentsense.getValue() and current_sensor  == 'enabled':
 								# error -- relay isn't supposed to be on - stuck on?
-
-								# relay off
+								
 								self.relay.off()
 
 								# red LED blinking
 								self.light(self.LIGHT_ERROR)
 							else:
 								# wait to give the current time to rise if switch left on
-								state = self.STATE_CHECKING_FOR_STARTUP_CURRENT
-
-								# relay on
+############################################################################################################################################################################################################								
 								self.relay.on()
 
 								# green LED on
 								self.light(self.LIGHT_ENERGIZED)
+								
+								if start_current_check  == 'enabled':
+									# start current rise time timer
+									self.start_timeout(self.rise_time)
+									state = self.STATE_CHECKING_FOR_STARTUP_CURRENT
+								else:
+									state = self.STATE_AWAITING_TIMEOUT
+									# start automatic logoff timeout timer
+									self.start_timeout(self.timeout_time)
 
-								# start current rise time timer
-								self.start_timeout(self.rise_time)
 						else:
 							# not an authorized member
 							# blink red LED a few times
@@ -181,21 +180,24 @@ class LargeMachineController(Controller):
 					elif event_type == self.EVENT_AUTH_PROCESSING:
 						self.light(self.LIGHT_AUTH_PROCESSING)
 
+					# not sure what this is doing yet.  -ozindfw
 					elif event_type == self.EVENT_CURRENT_SENSE:
 						if not message:
 							self.light(self.LIGHT_IDLE)
+#######################################################################################
+# STATE CHECKING_FOR_STARTUP_CURRENT
+#######################################################################################
 
 				elif state == self.STATE_CHECKING_FOR_STARTUP_CURRENT:
 					self.light(self.LIGHT_ENERGIZED)
 					
 					# checking for machine left turned on at badge-in
 					# give current time to rise
-					if event_type == self.EVENT_CURRENT_SENSE:
+					if event_type == self.EVENT_CURRENT_SENSE and start_current_check  == 'enabled':
 						# machine switch left on
 						# logout
 						state = self.STATE_IDLE
-
-						# relay off
+						
 						self.relay.off()
 
 						# blink all LEDs
@@ -215,21 +217,21 @@ class LargeMachineController(Controller):
 						self.light(self.LIGHT_AUTH_PROCESSING)
 	
 					elif event_type == self.EVENT_AUTH:
+############################################################################################################################################################################################################
+						self.relay.off()
+						state = self.STATE_IDLE
+
 						if message['authorized'] and authId == message['id']:
 							# user immediately badged back out
-							state = self.STATE_IDLE
-
-							# relay off
-							self.relay.off()
-
 							# yellow LED on
 							self.light(self.LIGHT_IDLE)
 						else:
 							# not a member or same member
-
 							# blink red LED a few times
 							self.light(self.LIGHT_NOT_AUTHORIZED)
-
+#######################################################################################
+# STATE ON
+#######################################################################################
 				elif state == self.STATE_ON:
 					self.light(self.LIGHT_ENERGIZED)
 
@@ -247,7 +249,6 @@ class LargeMachineController(Controller):
 								# user badged out
 								state = self.STATE_IDLE
 
-								# relay off
 								self.relay.off()
 
 								# yellow LED on
@@ -271,7 +272,9 @@ class LargeMachineController(Controller):
 						else:
 							# machine turned on
 							pass
-
+#######################################################################################
+# STATE AWAITING_TIMEOUT
+#######################################################################################
 				elif state == self.STATE_AWAITING_TIMEOUT:
 					self.light(self.LIGHT_ENERGIZED)
 
@@ -280,7 +283,6 @@ class LargeMachineController(Controller):
 						# log user out
 						state = self.STATE_IDLE
 
-						# relay off
 						self.relay.off()
 
 						# yellow LED on
@@ -295,8 +297,6 @@ class LargeMachineController(Controller):
 							self.cancel_timeout()
 						else:
 							# error state
-
-							# relay off
 							self.relay.off()
 
 							# red LED blinking
@@ -313,13 +313,15 @@ class LargeMachineController(Controller):
 						self.relay.off()
 
 						self.light(self.LIGHT_IDLE)
-
+#######################################################################################
+# STATE AWAITING_OFF
+#######################################################################################
 				elif state == self.STATE_AWAITING_OFF:
 					self.light(self.LIGHT_AWATING_TURN_OFF)
 
 					# attempt to badge out while machine is on
 					# wait until machine is turned off
-					if event_type == self.EVENT_CURRENT_SENSE:
+					if event_type == self.EVENT_CURRENT_SENSE and current_sensor  == 'enabled':  :
 						if not message:
 							# machine turned off, log user out
 							state = self.STATE_IDLE
@@ -329,6 +331,8 @@ class LargeMachineController(Controller):
 
 							# yellow LED on
 							self.light(self.LIGHT_IDLE)
+
+		
 		except Exception as e:
 			logging.error("Exception: %s" % str(e), exc_info=1)
 			os._exit(42) # Make sure entire application exits
