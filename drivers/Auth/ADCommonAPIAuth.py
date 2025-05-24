@@ -56,8 +56,12 @@ class ADCommonAPIAuth(Auth):
         data = {"badge":id_number,"group":self.config['group']}
         headers = {'content-type' : 'application/json'}
         
-        response = requests.get(url, json=data, headers=headers)
-        
+        try:
+            response = requests.get(url, json=data, headers=headers)
+        except requests.exceptions.ConnectionError as e:
+            logmsg = "HTTPS: Connection Error {e}" +str(id_number)
+            logging.debug(logmsg)
+
         if response.status_code != requests.codes.ok:
         
             logmsg = "RFID scan result response "+str(response.status_code)
