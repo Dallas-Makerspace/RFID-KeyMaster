@@ -18,33 +18,39 @@ class LargeMachineController(Controller):
 	EVENT_TIMEOUT = 30
 
 	def setup(self):
+		
 		self.auth = self.getDriver('auth')
-		self.currentsense = self.getDriver('currentsense')
+	
+	# Some applications run contunously making current sensing of no value
+	# If no current sense driver is specified then is it assumed to be disabled
+
+		if 'currentsense' in self.config:
+			self.currentsense = self.getDriver('currentsense')
+			self.current_sensor_state = 'enabled'
+		else:
+			self.current_sensor_state = 'disabled'
+		
 		self.lightdriver = self.getDriver('light')
 		#self.buzzer = self.getDriver('buzzer')
 		self.relay = self.getDriver('relay')
 		self.log = self.getDriver('log')
 
-		self.rise_time = 0.3
-		self.timeout_time = 5 * 60
 		self.timer = None
 
-		self.current_sensor = 'enabled'
-		self.start_current_check = 'enabled'
-
+		self.rise_time = 0.3
 		if 'rise_time' in self.config:
 			self.rise_time = int(self.config['rise_time'])
+		
+		self.timeout_time = 5 * 60		
 		if 'timeout_time' in self.config:
 			self.timeout_time = int(self.config['timeout_time'])
 #########################################################################################################################################################
-		# Some applications run contunously making current sensing of no value
-		
-		if 'current_sensor' in self.config:
-			self.current_sensor = (self.config['current_sensor']).lower
-
+	
 		# Some applications have a startup current surge that fools the power on check and never allows the 
 		# machine to be turned on. These applications have no need for this power on check 
 		
+		self.start_current_check = 'enabled'
+
 		if 'start_current_check' in self.config:
 			self.start_current_check = (self.config['start_current_check']).lower
 
