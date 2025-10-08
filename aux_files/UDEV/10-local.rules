@@ -1,8 +1,18 @@
 #
+#     7 Oct 25
+#     Added simple rule that needes to be tested in all configs
+#
 #  udev rules for RFID tag readers to alias to RFID_Reader_0 and RFID_Reader_1
 #
 KERNEL=="event*", SUBSYSTEM=="input", ATTRS{name}=="Sycreader*USB Reader", ATTRS{phys}=="*.usb-1.3*", SYMLINK="RFID_Reader_0"
 KERNEL=="event*", SUBSYSTEM=="input", ATTRS{name}=="Sycreader*USB Reader", ATTRS{phys}=="*.usb-1.1.3*", SYMLINK="RFID_Reader_0"
+
+#KERNELS=="event*", SUBSYSTEMS=="input", ATTRS{name}=="Sycreader*USB Reader", ATTRS{phys}=="*.usb-1*, SYMLINK="RFID_Reader_0"
+
+#
+#  Can probably simplify the rules to the following line for single reader installations on all Pi versions
+#
+ATTRS{name}=="Sycreader*USB Reader", SYMLINK="RFID_Reader_0"
 
 #
 
