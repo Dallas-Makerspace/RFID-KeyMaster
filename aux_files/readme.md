@@ -23,3 +23,8 @@ file to make this configuration easier.
 
 These two files are used to start, detect failure and restart the KeyMaster script. Keymaster is not started if already running 
 (So SSH sessions don't spawn a second process.) 
+
+  WiFi
+  
+This file improves Pi Zero W Wifi stability. Copy brcmfmac.conf to /etc/modprode.d/
+
