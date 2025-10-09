@@ -1,5 +1,6 @@
 By OZINDFW  
-8 December 2023
+
+updated 9 OCT 25
 
 Operation of this version of the KeyMaster RFID software has several requirements.  This file and the other directories contain information and files to meet those requirements.
 
