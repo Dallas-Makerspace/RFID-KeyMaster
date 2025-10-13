@@ -29,3 +29,7 @@ These two files are used to start, detect failure and restart the KeyMaster scri
   
 This file improves Pi Zero W Wifi stability. Copy brcmfmac.conf to /etc/modprode.d/
 
+   SSH
+
+This change to SSHD is essential for PiZeroWs
+
