@@ -1,3 +1,11 @@
+#
+#       Large Machine Controller with updated logging
+#
+#               OZINDFW 
+#               29 Jan 2026
+#
+
+
 from drivers.Controller.Controller import Controller
 import queue
 import time
@@ -101,7 +109,7 @@ class LargeMachineController(Controller):
 		self.queue.put([self.EVENT_CURRENT_SENSE, value])
 
 	def run(self):
-		logging.debug("Starting LargeMachineController")
+		logging.info("Starting LargeMachineController")
 
 		try:
 			self.queue = queue.Queue()
@@ -116,31 +124,31 @@ class LargeMachineController(Controller):
 
 			while True:
 				#if state == self.STATE_IDLE:
-				#    print("State Idle")
+				#	 print("State Idle")
 				#elif state == self.STATE_CHECKING_FOR_STARTUP_CURRENT:
-				#    print("State checking for startup current")
+				#	 print("State checking for startup current")
 				#elif state == self.STATE_AWAITING_TIMEOUT:
-				#    print("State Awating timeout")
+				#	 print("State Awating timeout")
 				#elif state == self.STATE_AWAITING_OFF:
-				#    print("State Awating off")
+				#	 print("State Awating off")
 				#elif state == self.STATE_ON:
-				#    print("State On")
+				#	 print("State On")
 				#else:
-				#    print("State Unknown")
+				#	 print("State Unknown")
 					
 				
 				event_type, message = self.queue.get()
 
 				#if event_type == self.EVENT_AUTH:
-				#    print("EVENT_AUTH")
+				#	 print("EVENT_AUTH")
 				#elif event_type == self.EVENT_AUTH_PROCESSING:
-				#    print("EVENT_AUTH_PROCESSING")
+				#	 print("EVENT_AUTH_PROCESSING")
 				#elif event_type == self.EVENT_CURRENT_SENSE:
-				#    print("EVENT_CURRENT_SENSE")
+				#	 print("EVENT_CURRENT_SENSE")
 				#elif event_type == self.EVENT_TIMEOUT:
-				#    print("EVENT_TIMEOUT")
+				#	 print("EVENT_TIMEOUT")
 				#else:
-				#    print("Unknown EVENT")
+				#	 print("Unknown EVENT")
 
 				#logging.debug("Event type: "+str(event_type)+", "+str(message))
 
@@ -158,6 +166,8 @@ class LargeMachineController(Controller):
 
 								# relay off
 								self.relay.off()
+								
+								logging.notice("Initial Startup Current Detected, shutting off")
 
 								# red LED blinking
 								self.light(self.LIGHT_ERROR)
@@ -194,6 +204,8 @@ class LargeMachineController(Controller):
 						# machine switch left on
 						# logout
 						state = self.STATE_IDLE
+						
+						logging.notice("Startup Current Detected, shutting off")
 
 						# relay off
 						self.relay.off()
@@ -210,6 +222,9 @@ class LargeMachineController(Controller):
 						
 						# start automatic logoff timeout timer
 						self.start_timeout(self.timeout_time)
+						
+						logging.info("Normal Startup, system on")
+
 
 					elif event_type == self.EVENT_AUTH_PROCESSING:
 						self.light(self.LIGHT_AUTH_PROCESSING)
@@ -218,6 +233,8 @@ class LargeMachineController(Controller):
 						if message['authorized'] and authId == message['id']:
 							# user immediately badged back out
 							state = self.STATE_IDLE
+							
+							logging.info("Badged out, shutting off")
 
 							# relay off
 							self.relay.off()
@@ -246,6 +263,8 @@ class LargeMachineController(Controller):
 							else:
 								# user badged out
 								state = self.STATE_IDLE
+								
+								logging.info("Badged out, System off")
 
 								# relay off
 								self.relay.off()
@@ -278,6 +297,9 @@ class LargeMachineController(Controller):
 					# user turned machine off but did not badge out
 					if event_type == self.EVENT_TIMEOUT:
 						# log user out
+						
+						logging.info("Idle timeout, shutting off")
+
 						state = self.STATE_IDLE
 
 						# relay off
@@ -308,6 +330,8 @@ class LargeMachineController(Controller):
 					elif event_type == self.EVENT_AUTH:
 						# some badge badged out
 						state = self.STATE_IDLE
+						
+						logging.info("Badged out while awaiting timeout, System off")
 
 						# relay off
 						self.relay.off()
@@ -326,6 +350,7 @@ class LargeMachineController(Controller):
 
 							# relay off
 							self.relay.off()
+							logging.info("Badged out and machine turned off, System off")
 
 							# yellow LED on
 							self.light(self.LIGHT_IDLE)
