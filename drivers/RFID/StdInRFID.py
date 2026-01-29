@@ -1,3 +1,10 @@
+#
+#       RFID reader uses standard in as data source
+#
+#               OZINDFW 
+#               29 Jan 2026
+#
+
 from drivers.RFID.RFID import RFID
 import sys
 import logging
