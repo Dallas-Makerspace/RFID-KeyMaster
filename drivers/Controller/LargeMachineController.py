@@ -3,6 +3,7 @@
 #
 #               OZINDFW 
 #               29 Jan 2026
+#               14 Feb 2026 Added logging for more states
 #
 
 
@@ -205,7 +206,7 @@ class LargeMachineController(Controller):
 						# logout
 						state = self.STATE_IDLE
 						
-						logging.notice("Startup Current Detected, shutting off")
+						logging.info("Startup Current Detected, shutting off")
 
 						# relay off
 						self.relay.off()
