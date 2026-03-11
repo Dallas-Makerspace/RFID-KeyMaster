@@ -1,0 +1,39 @@
+[Drivers]
+##### Cabinet Controller Setup #####
+
+controller = CabinetStapleLatchController
+
+auth = ADCommonAPIAuth
+
+rfid = StdInRFID
+
+log = FileLog
+
+controller_io_interface = PiGpioInterface
+
+cabinet_sense = CabinetSwitchSense
+cabinet_sense_interface = PiGpioInterface
+
+light = RGBLight
+light_interface = PiGpioInterface
+
+[CabinetStapleLatchController]
+latch_control_interface = GPIO17, inverting
+
+[CabinetSwitchSense]
+latch_sense_interface = GPIO18, inverting
+door_sense_interface = GPIO27, non-inverting
+
+[ADCommonAPIAuth]
+url = http://192.168.203.30:8083/badgeGroupMembership
+group = Infrastructure Cabinet Test
+
+[RGBLight]
+interface_position_red = GPIO22, non-inverting
+interface_position_green = GPIO23, non-inverting
+interface_position_blue = GPIO24, non-inverting
+
+[FileLog]
+filename = KeyMaster.log
+loglevel = info
+
