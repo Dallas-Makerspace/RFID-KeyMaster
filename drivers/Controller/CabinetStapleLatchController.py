@@ -18,6 +18,7 @@ class CabinetStapleLatchController(Controller):
 	EVENT_AUTH_PROCESSING = 20
 	EVENT_TIMEOUT = 30
 	EVENT_CABINET_SENSE = 40
+	EVENT_IDLE = 50
 
 	def setup(self):
 		self.auth = self.getDriver('auth')
@@ -56,7 +57,6 @@ class CabinetStapleLatchController(Controller):
 			self.latch_control_interface = (self.config['latch_control_interface'])
 		else:
 			log.debug("latch_control_interface not specified, aborting")
-			print("\nlatch_control_interface not specified, aborting\n")
 
 
 		# Defaults
@@ -65,13 +65,13 @@ class CabinetStapleLatchController(Controller):
 												  [self.lightdriver.COLOR_RED, False, None])
 
 		self.LIGHT_UNLOCKED = self.getColorFromConfig('light_unlocked',
-															  [self.lightdriver.COLOR_GREEN, True, 15])
+															  [self.lightdriver.COLOR_GREEN, True, -1]) #Blink Forever
 
 		self.LIGHT_READY_TO_LOCK = self.getColorFromConfig('ready_to_lock',
 													   [self.lightdriver.COLOR_GREEN, False, None])
 
 		self.LIGHT_FAILED  = self.getColorFromConfig('light_failed',
-												   [self.lightdriver.COLOR_RED, True, 15])
+												   [self.lightdriver.COLOR_RED, True, -1]) #Blink Forever
 
 		self.LIGHT_AUTH_PROCESSING = self.getColorFromConfig('light_auth_processing',
 															  [self.lightdriver.COLOR_YELLOW, False, None])
@@ -80,7 +80,7 @@ class CabinetStapleLatchController(Controller):
 															[self.lightdriver.COLOR_YELLOW, True, 5])
 
 		self.LIGHT_LATCH_FAULT = self.getColorFromConfig('light_latch_fault',
-															[self.lightdriver.COLOR_RED, True, 15])
+															[self.lightdriver.COLOR_RED, True, -1]) #Blink Forever
 
 		return True
 
@@ -131,37 +131,31 @@ class CabinetStapleLatchController(Controller):
 				self.state = self.STATE_LOCKED
 				self.light(self.LIGHT_LOCKED)
 				logging.debug("Cabinet state changed to LOCKED")
-				print("\nCabinet state changed to LOCKED")
 			case CabinetStapleLatchController.STATE_AUTH_PROCESSING:
 				self.state = self.STATE_AUTH_PROCESSING
 				self.light(self.LIGHT_AUTH_PROCESSING)
 				logging.debug("Cabinet state changed to AUTH_PROCESSING")
-				print("\nCabinet state changed to AUTH_PROCESSING")
 			case CabinetStapleLatchController.STATE_AUTH:
 				self.state = self.STATE_AUTH
 				self.light(self.LIGHT_AUTH_PROCESSING)
 				logging.debug("Cabinet state changed to AUTH")
-				print("\nCabinet state changed to AUTH")
 			case CabinetStapleLatchController.STATE_UNLOCKED:
 				self.state = self.STATE_UNLOCKED
 				self.light(self.LIGHT_UNLOCKED)
 				logging.debug("Cabinet state changed to UNLOCKED")
-				print("\nCabinet state changed to UNLOCKED")
 			case CabinetStapleLatchController.STATE_READY_TO_LOCK:
 				self.state = self.STATE_READY_TO_LOCK
 				self.light(self.LIGHT_READY_TO_LOCK)
 				logging.debug("Cabinet state changed to READY TO LOCK")
-				print("\nCabinet state changed to READY TO LOCK")
 			case CabinetStapleLatchController.STATE_LATCH_FAULT:
 				self.state = self.STATE_LATCH_FAULT
+				self.retry_count = self.clear_retries
 				self.light(self.LIGHT_LATCH_FAULT)
 				logging.debug("Cabinet state changed to LATCH FAULT")
-				print("\nCabinet state changed to LATCH FAULT")
 			case CabinetStapleLatchController.STATE_FAILED:
-				self.state = self.STATE_LOCKED
+				self.state = self.STATE_FAILED
 				self.light(self.LIGHT_LATCH_FAULT)
 				logging.error("Cabinet state changed to FAILED")
-				print("\nCabinet state changed to FAILED")
 
 #
 #	Pulse latch 'unlock_pulse' seconds on to unlock
@@ -172,7 +166,6 @@ class CabinetStapleLatchController(Controller):
 		self.interface.output(self.config['latch_control_interface'],1)
 		time.sleep(self.unlock_pulse)
 		self.interface.output(self.config['latch_control_interface'],0)
-		print("\nUNLOCK\n")
 
 ################################################################################
 #
@@ -193,33 +186,36 @@ class CabinetStapleLatchController(Controller):
 			self.auth.observeAuthProcessing(self.authProcessingEvent)
 			self.cabinetsense.observeCabinetChange(self.cabinetChangeEvent)
 			
+			self.retry_count = self.clear_retries  # set up for fault clearance 
+			
 ##################################################################################
 # Get initial door state to set system state
 ##################################################################################
-
 			match self.cabinetsense.getValue():
 				case "closed":
 					logging.info("Startup state LOCKED")
+#					print("\nStartup state LOCKED")
 					self.changeState(self.STATE_LOCKED)
 				case "fault":
 					logmsg = "Startup Latch Fault Detected, attempting to clear"
 					logging.debug(logmsg)
-					print("\n",logmsg)
+#					print("\n",logmsg)
 					self.changeState(self.STATE_LATCH_FAULT)
 					self.unlock()
 			# Need to start timer to kick off event loop so we can try to clear
 					self.start_timeout(self.clear_retry_delay)
 				case "unlocked":
 					logging.info("Startup state UNlocked")
-					print("\nStartup state UNlocked")
+#					print("\nStartup state UNlocked")
 					self.changeState(self.STATE_UNLOCKED)
 				case "open":
 					logging.info("Startup state OPEN")
-					print("\nStartup state OPEN")
+#					print("\nStartup state OPEN")
 					self.changeState(self.STATE_READY_TO_LOCK)
 
 			authId = None
 			message = ""
+			event_type = self.EVENT_IDLE
 
 ###############################################################################
 #
@@ -232,7 +228,8 @@ class CabinetStapleLatchController(Controller):
 
 				event_type, message = self.queue.get()
 				
-				print ("\nEvent: ",event_type," Message: ", message)
+				logging.debug ("Event: %s, Message: %s, State: %s",event_type, message, self.state )
+#				print ("\nLoop Top Event: ",event_type," Message: ", message, "State: ",self.state )
  
 
 ###############################################################################
@@ -254,6 +251,7 @@ class CabinetStapleLatchController(Controller):
 						else:
 							# not an authorized member
 							self.light(self.LIGHT_NOT_AUTHORIZED)
+							time.sleep(3)
 							self.light(self.LIGHT_LOCKED)
 					elif event_type == self.EVENT_CABINET_SENSE:
 						match message:
@@ -267,6 +265,8 @@ class CabinetStapleLatchController(Controller):
 								self.changeState(self.STATE_READY_TO_LOCK)
 					elif event_type == self.EVENT_TIMEOUT:
 						pass
+						   
+			
 						
 ###############################################################################
 #
@@ -287,6 +287,7 @@ class CabinetStapleLatchController(Controller):
 						else:
 							# not an authorized member
 							self.light(self.LIGHT_NOT_AUTHORIZED)
+							self.changeState(self.STATE_LOCKED)
 							time.sleep(2)
 							self.light(self.LIGHT_LOCKED)
 					elif event_type == self.EVENT_CABINET_SENSE:
@@ -307,7 +308,7 @@ class CabinetStapleLatchController(Controller):
 #				STATE_UNLOCKED
 #
 #					Cabinet unlocked and ready to open
-#  This may not be needed - either awaiting timeout or ready to lock
+#  This may not be needed - should be either awaiting timeout or ready to lock
 #
 ###############################################################################
 
@@ -323,6 +324,8 @@ class CabinetStapleLatchController(Controller):
 								pass
 							case "open":
 								self.changeState(self.STATE_READY_TO_LOCK)
+					elif event_type == self.EVENT_AUTH_PROCESSING or self.EVENT_AUTH:
+						logging.debug("Already Open")
 					elif event_type == self.EVENT_TIMEOUT:
 						pass
 
@@ -343,7 +346,9 @@ class CabinetStapleLatchController(Controller):
 							case "unlocked":
 								self.changeState(self.STATE_UNLOCKED)
 							case "open":
-								self.changeState(self.STATE_READY_TO_LOCK)
+								pass
+					elif event_type == self.EVENT_AUTH_PROCESSING or self.EVENT_AUTH:
+						logging.debug("Already ready to lock")
 					elif event_type == self.EVENT_TIMEOUT:
 						pass
 
@@ -358,12 +363,13 @@ class CabinetStapleLatchController(Controller):
 ###############################################################################
 
 				if self.state == self.STATE_LATCH_FAULT:
-					print ("Latch Fault1\n")
-					if self.clear_retries == self.retry_count:
+					if self.retry_count == self.clear_retries :
 						logging.debug("		LATCH FAULT")
-						print ("Latch Fault2 \n")
+						self.unlock()
+						self.retry_count -= 1
+						self.start_timeout(self.clear_retry_delay)
 
-					if event_type == self.EVENT_TIMEOUT:
+					elif event_type == self.EVENT_TIMEOUT:
 						self.unlock()
 						self.retry_count -= 1
 						self.start_timeout(self.clear_retry_delay)
@@ -371,33 +377,33 @@ class CabinetStapleLatchController(Controller):
 					elif event_type == self.EVENT_CABINET_SENSE:
 						match message:
 							case "closed":
+								self.retry_count = self.clear_retries
 								self.changeState(self.STATE_LOCKED)
-							case "fault":
-#								logging.debug("		LATCH FAULT")
-								self.unlock()
-								self.retry_count -= 1
-								self.start_timeout(self.clear_retry_delay)
 							case "unlocked":
+								self.retry_count = self.clear_retries
 								self.changeState(self.STATE_UNLOCKED)
 							case "open":
+								self.retry_count = self.clear_retries
 								self.changeState(self.STATE_READY_TO_LOCK)
-						if message != "fault":
-							self.retry_count = self.clear_retries
-					
-					if self.clear_retries <= 0 and message == "fault":
+								
+					elif event_type == self.EVENT_AUTH_PROCESSING or self.EVENT_AUTH:
+						print("\nLatch Fault Auth Event: ",event_type)
+						logging.debug("Attempting to clear fault, ignnored")
+
+					if self.retry_count <= 0 :
 						self.changeState(self.STATE_FAILED)
-						
+						self.cancel_timeout()
 						logmsg="Latch in failed self.state after "+str(self.clear_retries)+" attempts to clear"
 						logging.error(logmsg)
-						print(logmsg,"\n")
-
-						print("\n",logmsg,"\n")
-						
-						while True:
-							self.light(self.LIGHT_LATCH_FAULT)
+						self.start_timeout(.2)
 
 
-#						raise Exception(logmsg)
+					# lock up
+				if self.state == self.STATE_FAILED:
+					while True:
+						self.light(self.LIGHT_LATCH_FAULT)
+
+
 
 
 ###############################################################################
