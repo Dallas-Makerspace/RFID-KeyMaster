@@ -18,10 +18,10 @@ light = RGBLight
 light_interface = PiGpioInterface
 
 [CabinetStapleLatchController]
-latch_control_interface = GPIO17, inverting
+latch_control_interface = GPIO17, non-inverting
 
 [CabinetSwitchSense]
-latch_sense_interface = GPIO18, inverting
+latch_sense_interface = GPIO18, non-inverting
 door_sense_interface = GPIO27, non-inverting
 
 [ADCommonAPIAuth]
@@ -35,5 +35,5 @@ interface_position_blue = GPIO24, non-inverting
 
 [FileLog]
 filename = KeyMaster.log
-loglevel = info
+loglevel = debug
 
