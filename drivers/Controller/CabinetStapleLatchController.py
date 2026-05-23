@@ -324,8 +324,11 @@ class CabinetStapleLatchController(Controller):
 								pass
 							case "open":
 								self.changeState(self.STATE_READY_TO_LOCK)
-					elif event_type == self.EVENT_AUTH_PROCESSING or self.EVENT_AUTH:
+					elif event_type == self.EVENT_AUTH_PROCESSING:
 						logging.debug("Already Open")
+					elif event_type == self.EVENT_AUTH:
+						logging.debug("Second Swipe, Locking")
+						self.changeState(self.STATE_LOCKED)
 					elif event_type == self.EVENT_TIMEOUT:
 						pass
 
