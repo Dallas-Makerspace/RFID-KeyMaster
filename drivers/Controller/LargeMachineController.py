@@ -39,7 +39,7 @@ class LargeMachineController(Controller):
 		self.timer = None
 
 		if 'rise_time' in self.config:
-			self.rise_time = int(self.config['rise_time'])
+			self.rise_time = float(self.config['rise_time'])
 		if 'timeout_time' in self.config:
 			self.timeout_time = int(self.config['timeout_time'])
 
