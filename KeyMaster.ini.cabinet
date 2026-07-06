@@ -7,8 +7,8 @@ auth = ADCommonAPIAuth
 
 rfid = StdInRFID
 
-log = KibanaLog
 # log = FileLog
+log = KibanaLog
 
 controller_io_interface = PiGpioInterface
 
@@ -44,5 +44,5 @@ api_key =
 
 [FileLog]
 filename = KeyMaster.log
-log_level = debug
+loglevel = debug
 
