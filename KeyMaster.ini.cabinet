@@ -7,7 +7,8 @@ auth = ADCommonAPIAuth
 
 rfid = StdInRFID
 
-log = FileLog
+# log = FileLog
+log = KibanaLog
 
 controller_io_interface = PiGpioInterface
 
@@ -32,6 +33,14 @@ group = Infrastructure Cabinet Test
 interface_position_red = GPIO22, non-inverting
 interface_position_green = GPIO23, non-inverting
 interface_position_blue = GPIO24, non-inverting
+
+[KibanaLog]
+url = https://192.168.0.150:9200
+index = not-john-index
+filename = KeyMaster.log
+log_level = debug
+device_name = 
+api_key = 
 
 [FileLog]
 filename = KeyMaster.log

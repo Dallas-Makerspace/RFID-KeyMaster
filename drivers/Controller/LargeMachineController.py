@@ -168,7 +168,7 @@ class LargeMachineController(Controller):
 								# relay off
 								self.relay.off()
 								
-								logging.notice("Initial Startup Current Detected, shutting off")
+								logging.info("Initial Startup Current Detected, shutting off")
 
 								# red LED blinking
 								self.light(self.LIGHT_ERROR)
