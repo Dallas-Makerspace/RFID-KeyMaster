@@ -35,11 +35,12 @@ interface_position_green = GPIO23, non-inverting
 interface_position_blue = GPIO24, non-inverting
 
 [KibanaLog]
-url = http://your-elasticsearch-host:9200
-index = rfid-keymaster
+url = https://192.168.0.150:9200
+index = not-john-index
 filename = KeyMaster.log
 log_level = debug
-# device_name = cabinet-01
+device_name = 
+api_key = 
 
 [FileLog]
 filename = KeyMaster.log

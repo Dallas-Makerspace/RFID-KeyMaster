@@ -56,7 +56,7 @@ class CabinetStapleLatchController(Controller):
 		if 'latch_control_interface' in self.config:
 			self.latch_control_interface = (self.config['latch_control_interface'])
 		else:
-			log.debug("latch_control_interface not specified, aborting")
+			logging.debug("latch_control_interface not specified, aborting")
 
 
 		# Defaults
