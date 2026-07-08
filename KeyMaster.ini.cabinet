@@ -23,6 +23,7 @@ latch_control_interface = GPIO17, non-inverting
 [CabinetSwitchSense]
 latch_sense_interface = GPIO18, non-inverting
 door_sense_interface = GPIO27, non-inverting
+#debounce_tries = 4
 
 [ADCommonAPIAuth]
 url = http://192.168.203.30:8083/badgeGroupMembership
