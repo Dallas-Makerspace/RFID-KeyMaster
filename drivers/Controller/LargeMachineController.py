@@ -1,9 +1,9 @@
 #
-#       Large Machine Controller with updated logging
+#		Large Machine Controller with updated logging
 #
-#               OZINDFW 
-#               29 Jan 2026
-#               14 Feb 2026 Added logging for more states
+#				OZINDFW 
+#				29 Jan 2026
+#				14 Feb 2026 Added logging for more states
 #
 
 
@@ -43,9 +43,8 @@ class LargeMachineController(Controller):
 		if 'timeout_time' in self.config:
 			self.timeout_time = int(self.config['timeout_time'])
 		if 'bypass_startup_current_check' in self.config:
-            self.bypass_startup_current_check = self.config['bypass_startup_current_check']
-            logging.info('Startup Current Check Bypassed')
-
+			self.bypass_startup_current_check = self.config['bypass_startup_current_check']
+			logging.info('Startup Current Check Bypassed')
 
 		# Defaults
 		# [Intensity/Color, Blink, Blink Count]
@@ -155,10 +154,10 @@ class LargeMachineController(Controller):
 								# wait to give the current time to rise if switch left on
 								#	unless bypass is selected
 								
-                                if not self.bypass_startup_current_check:
-                                    state = self.STATE_CHECKING_FOR_STARTUP_CURRENT
-                                else:
-                                    state = self.STATE_ON
+								if not self.bypass_startup_current_check:
+									state = self.STATE_CHECKING_FOR_STARTUP_CURRENT
+								else:
+									state = self.STATE_ON
 
 								# relay on
 								self.relay.on()
