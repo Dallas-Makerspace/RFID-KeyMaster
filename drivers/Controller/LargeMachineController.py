@@ -37,6 +37,7 @@ class LargeMachineController(Controller):
 		self.rise_time = 0.3
 		self.timeout_time = 5 * 60
 		self.timer = None
+		self.bypass_startup_current_check = False
 
 		if 'rise_time' in self.config:
 			self.rise_time = float(self.config['rise_time'])
