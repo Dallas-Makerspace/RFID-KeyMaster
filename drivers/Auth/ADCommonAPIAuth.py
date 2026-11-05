@@ -51,41 +51,62 @@ class ADCommonAPIAuth(Auth):
     
 
     def lookup_rfid(self, id_number):
-    
+
         url = self.config['url']
         data = {"badge":id_number,"group":self.config['group']}
         headers = {'content-type' : 'application/json'}
-        
-        response = requests.get(url, json=data, headers=headers)
-        
+
+        # The auth transport must never take the interlock down with it:
+        # a failed, slow, or unreachable membership service is a denial,
+        # not an exception in the RFID reader thread. (Previously this
+        # call had no timeout and no exception handling; a connection
+        # error propagated through the Observer notification and the
+        # reader's generic handler exited the whole application, and a
+        # hung service blocked badge scans indefinitely.)
+        try:
+            response = requests.get(url, json=data, headers=headers, timeout=5)
+        except requests.RequestException as e:
+            logging.error("Badge lookup failed for badge %s: %s" % (id_number, e))
+            self.notifyAuthObservers({"authorized": False, "id": id_number})
+            return
+
         if response.status_code != requests.codes.ok:
-        
+
             logmsg = "RFID scan result response "+str(response.status_code)
             logging.debug(logmsg)
 
+            self.notifyAuthObservers({"authorized": False, "id": id_number})
             return
-        
-        json = response.json()
+
+        try:
+            payload = response.json()
+        except ValueError:
+            logging.error("Badge lookup for badge %s returned unparseable JSON" % id_number)
+            self.notifyAuthObservers({"authorized": False, "id": id_number})
+            return
 
 #
 #       Response should be in the form:
 #       {"inGroup":true,"activeMember":true}
 #       or false as the case may be.  "activeMember" means the badge ID is found.
 #       "inGroup" means it is found in the group specified in the request.
-# 
-        if "inGroup" not in json:
-            return
-        
+#
+#       Both must be true to authorize: a badge that is in the group but
+#       not an active membership must not energize the machine. Missing
+#       keys are treated as a denial rather than raising KeyError.
+#
+        in_group = payload.get("inGroup") is True
+        active_member = payload.get("activeMember") is True
+
         user = {
-            "authorized": json["inGroup"],
+            "authorized": in_group and active_member,
             "id": id_number
         }
-                
-        logmsg = "Badge Number is "+str(id_number)+" Permitted: "+str(json["inGroup"])+" Active Member: "+str(json["activeMember"])        
+
+        logmsg = "Badge Number is "+str(id_number)+" Permitted: "+str(in_group)+" Active Member: "+str(active_member)
         logging.debug(logmsg)
 
         self.notifyAuthObservers(user)
-
 
 synchronize(ADCommonAPIAuth, "auth_scan, lookup_rfid")
         
